@@ -1,16 +1,15 @@
-```python
 from flask import Flask, request, jsonify, render_template_string
 import numpy as np
 import pickle
 
 # =====================================================
-# FLASK APP
+# FLASK APPLICATION
 # =====================================================
 
 app = Flask(__name__)
 
 # =====================================================
-# LOAD MODEL
+# LOAD MACHINE LEARNING MODEL
 # =====================================================
 
 try:
@@ -19,10 +18,10 @@ try:
 
 except Exception as e:
     model = None
-    print("❌ Model Error:", e)
+    print("❌ Error Loading Model:", e)
 
 # =====================================================
-# HTML + CSS + JAVASCRIPT
+# HTML PAGE
 # =====================================================
 
 HTML_PAGE = """
@@ -61,14 +60,14 @@ HTML_PAGE = """
 
             background:linear-gradient(135deg,#0f172a,#1e293b,#2563eb);
 
-            overflow:hidden;
+            padding:30px;
         }
 
         .container{
 
-            width:95%;
+            width:100%;
 
-            max-width:1000px;
+            max-width:1100px;
 
             padding:40px;
 
@@ -81,7 +80,6 @@ HTML_PAGE = """
             box-shadow:0 10px 40px rgba(0,0,0,0.4);
 
             animation:fadeIn 1s ease;
-
         }
 
         @keyframes fadeIn{
@@ -105,23 +103,25 @@ HTML_PAGE = """
 
             margin-bottom:10px;
 
-            font-size:40px;
+            font-size:42px;
         }
 
-        p{
+        .subtitle{
 
             text-align:center;
 
             color:#d1d5db;
 
             margin-bottom:35px;
+
+            font-size:16px;
         }
 
         .grid{
 
             display:grid;
 
-            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 
             gap:20px;
         }
@@ -140,15 +140,17 @@ HTML_PAGE = """
             margin-bottom:8px;
 
             font-size:14px;
+
+            font-weight:500;
         }
 
         input{
 
-            padding:14px;
+            padding:15px;
 
             border:none;
 
-            border-radius:12px;
+            border-radius:14px;
 
             background:rgba(255,255,255,0.18);
 
@@ -166,6 +168,8 @@ HTML_PAGE = """
             background:rgba(255,255,255,0.28);
 
             transform:scale(1.02);
+
+            box-shadow:0 0 10px rgba(37,99,235,0.5);
         }
 
         input::placeholder{
@@ -184,7 +188,7 @@ HTML_PAGE = """
 
         button{
 
-            padding:16px 45px;
+            padding:16px 50px;
 
             border:none;
 
@@ -207,7 +211,7 @@ HTML_PAGE = """
 
             transform:translateY(-4px) scale(1.03);
 
-            box-shadow:0 10px 25px rgba(16,185,129,0.4);
+            box-shadow:0 10px 25px rgba(16,185,129,0.45);
         }
 
         .result{
@@ -225,15 +229,43 @@ HTML_PAGE = """
             color:white;
 
             font-size:22px;
+
+            min-height:120px;
+
+            display:flex;
+
+            flex-direction:column;
+
+            justify-content:center;
         }
 
         .confidence{
 
-            margin-top:10px;
+            margin-top:12px;
 
             color:#d1fae5;
 
             font-size:17px;
+        }
+
+        .recommendation{
+
+            margin-top:10px;
+
+            font-size:15px;
+
+            color:#e5e7eb;
+        }
+
+        @media(max-width:768px){
+
+            .container{
+                padding:25px;
+            }
+
+            h1{
+                font-size:30px;
+            }
         }
 
     </style>
@@ -246,53 +278,55 @@ HTML_PAGE = """
 
     <h1>⚡ Smart Electricity Prediction</h1>
 
-    <p>AI Powered Energy Usage Prediction System</p>
+    <div class="subtitle">
+        AI Powered Electricity Usage Prediction System
+    </div>
 
     <div class="grid">
 
         <div class="input-box">
             <label>Hour</label>
-            <input type="number" id="Hour" placeholder="0-23">
+            <input type="number" id="Hour" placeholder="0 - 23">
         </div>
 
         <div class="input-box">
             <label>Day of Week</label>
-            <input type="number" id="Day_of_Week" placeholder="1-7">
+            <input type="number" id="Day_of_Week" placeholder="1 - 7">
         </div>
 
         <div class="input-box">
             <label>Month</label>
-            <input type="number" id="Month" placeholder="1-12">
+            <input type="number" id="Month" placeholder="1 - 12">
         </div>
 
         <div class="input-box">
             <label>Number of Appliances</label>
-            <input type="number" id="Num_Appliances">
+            <input type="number" id="Num_Appliances" placeholder="Enter count">
         </div>
 
         <div class="input-box">
             <label>Household Size</label>
-            <input type="number" id="Household_Size">
+            <input type="number" id="Household_Size" placeholder="Family members">
         </div>
 
         <div class="input-box">
-            <label>Temperature °C</label>
-            <input type="number" id="Temperature_C">
+            <label>Temperature (°C)</label>
+            <input type="number" id="Temperature_C" placeholder="Temperature">
         </div>
 
         <div class="input-box">
-            <label>Previous Usage kWh</label>
-            <input type="number" id="Previous_Usage_kWh">
+            <label>Previous Usage (kWh)</label>
+            <input type="number" id="Previous_Usage_kWh" placeholder="Previous usage">
         </div>
 
         <div class="input-box">
-            <label>Weekend (0/1)</label>
-            <input type="number" id="Is_Weekend">
+            <label>Weekend (0 or 1)</label>
+            <input type="number" id="Is_Weekend" placeholder="0 or 1">
         </div>
 
         <div class="input-box">
-            <label>Solar Panel (0/1)</label>
-            <input type="number" id="Solar_Panel">
+            <label>Solar Panel (0 or 1)</label>
+            <input type="number" id="Solar_Panel" placeholder="0 or 1">
         </div>
 
     </div>
@@ -323,64 +357,74 @@ async function predictUsage(){
 
     resultBox.innerHTML = "⏳ Predicting...";
 
-    const response = await fetch("/predict", {
+    try{
 
-        method:"POST",
+        const response = await fetch("/predict", {
 
-        headers:{
-            "Content-Type":"application/json"
-        },
+            method:"POST",
 
-        body:JSON.stringify({
+            headers:{
+                "Content-Type":"application/json"
+            },
 
-            Hour:document.getElementById("Hour").value,
+            body:JSON.stringify({
 
-            Day_of_Week:document.getElementById("Day_of_Week").value,
+                Hour:document.getElementById("Hour").value,
 
-            Month:document.getElementById("Month").value,
+                Day_of_Week:document.getElementById("Day_of_Week").value,
 
-            Num_Appliances:document.getElementById("Num_Appliances").value,
+                Month:document.getElementById("Month").value,
 
-            Household_Size:document.getElementById("Household_Size").value,
+                Num_Appliances:document.getElementById("Num_Appliances").value,
 
-            Temperature_C:document.getElementById("Temperature_C").value,
+                Household_Size:document.getElementById("Household_Size").value,
 
-            Previous_Usage_kWh:document.getElementById("Previous_Usage_kWh").value,
+                Temperature_C:document.getElementById("Temperature_C").value,
 
-            Is_Weekend:document.getElementById("Is_Weekend").value,
+                Previous_Usage_kWh:document.getElementById("Previous_Usage_kWh").value,
 
-            Solar_Panel:document.getElementById("Solar_Panel").value
+                Is_Weekend:document.getElementById("Is_Weekend").value,
 
-        })
+                Solar_Panel:document.getElementById("Solar_Panel").value
 
-    });
+            })
 
-    const data = await response.json();
+        });
 
-    if(data.success){
+        const data = await response.json();
 
-        resultBox.innerHTML = `
+        if(data.success){
 
-            ${data.prediction}
+            resultBox.innerHTML = `
 
-            <div class="confidence">
+                <div>${data.prediction}</div>
 
-                Confidence: ${data.confidence}%
+                <div class="confidence">
 
-                <br><br>
+                    Confidence: ${data.confidence}%
 
-                ${data.recommendation}
+                </div>
 
-            </div>
+                <div class="recommendation">
 
-        `;
+                    ${data.recommendation}
+
+                </div>
+
+            `;
+
+        }
+
+        else{
+
+            resultBox.innerHTML = "❌ Error: " + data.error;
+        }
 
     }
 
-    else{
+    catch(error){
 
-        resultBox.innerHTML = "❌ Error: " + data.error;
-
+        resultBox.innerHTML = "❌ Server Error";
     }
 
 }
@@ -388,6 +432,7 @@ async function predictUsage(){
 </script>
 
 </body>
+
 </html>
 
 """
@@ -410,19 +455,28 @@ def predict():
 
     try:
 
+        if model is None:
+
+            return jsonify({
+
+                "success": False,
+                "error": "Model file not loaded"
+
+            })
+
         data = request.get_json()
 
         features = np.array([[
 
-            int(data["Hour"]),
-            int(data["Day_of_Week"]),
-            int(data["Month"]),
-            int(data["Num_Appliances"]),
-            int(data["Household_Size"]),
-            float(data["Temperature_C"]),
-            float(data["Previous_Usage_kWh"]),
-            int(data["Is_Weekend"]),
-            int(data["Solar_Panel"])
+            int(data.get("Hour", 0)),
+            int(data.get("Day_of_Week", 0)),
+            int(data.get("Month", 0)),
+            int(data.get("Num_Appliances", 0)),
+            int(data.get("Household_Size", 0)),
+            float(data.get("Temperature_C", 0)),
+            float(data.get("Previous_Usage_kWh", 0)),
+            int(data.get("Is_Weekend", 0)),
+            int(data.get("Solar_Panel", 0))
 
         ]])
 
@@ -443,7 +497,7 @@ def predict():
             result = "✅ Low Electricity Usage Predicted"
 
             recommendation = (
-                "Electricity usage is efficient and stable."
+                "Electricity usage is stable and efficient."
             )
 
         return jsonify({
@@ -469,6 +523,19 @@ def predict():
         })
 
 # =====================================================
+# HEALTH CHECK
+# =====================================================
+
+@app.route("/health")
+def health():
+
+    return jsonify({
+
+        "status": "running"
+
+    })
+
+# =====================================================
 # MAIN
 # =====================================================
 
@@ -479,4 +546,3 @@ if __name__ == "__main__":
         port=5000,
         debug=True
     )
-```
