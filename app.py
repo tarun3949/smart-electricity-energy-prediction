@@ -1,28 +1,17 @@
 from flask import Flask, request, jsonify, render_template_string
+import pandas as pd
 import numpy as np
-import pickle
-
-# =====================================================
-# FLASK APPLICATION
-# =====================================================
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+from sklearn.preprocessing import LabelEncoder
+import io
 
 app = Flask(__name__)
 
-# =====================================================
-# LOAD MACHINE LEARNING MODEL
-# =====================================================
-
-try:
-    model = pickle.load(open("model.pkl", "rb"))
-    print("✅ Model Loaded Successfully")
-
-except Exception as e:
-    model = None
-    print("❌ Error Loading Model:", e)
-
-# =====================================================
-# HTML PAGE
-# =====================================================
+# =========================================================
+# PROFESSIONAL HTML + CSS + JAVASCRIPT UI
+# =========================================================
 
 HTML_PAGE = """
 
@@ -31,244 +20,230 @@ HTML_PAGE = """
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Energy Consumption Prediction</title>
 
-    <title>Smart Electricity Prediction</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
 
-    <style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
 
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:'Poppins',sans-serif;
-        }
+body{
 
-        body{
+    min-height:100vh;
 
-            min-height:100vh;
+    display:flex;
 
-            display:flex;
+    justify-content:center;
 
-            justify-content:center;
+    align-items:center;
 
-            align-items:center;
+    overflow:hidden;
 
-            background:linear-gradient(135deg,#0f172a,#1e293b,#2563eb);
+    background:linear-gradient(-45deg,#0f172a,#1e3a8a,#2563eb,#0f766e);
 
-            padding:30px;
-        }
+    background-size:400% 400%;
 
-        .container{
+    animation:bgAnimation 12s ease infinite;
+}
 
-            width:100%;
+@keyframes bgAnimation{
 
-            max-width:1100px;
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
 
-            padding:40px;
+.container{
 
-            border-radius:25px;
+    width:92%;
 
-            background:rgba(255,255,255,0.12);
+    max-width:1000px;
 
-            backdrop-filter:blur(18px);
+    padding:40px;
 
-            box-shadow:0 10px 40px rgba(0,0,0,0.4);
+    border-radius:30px;
 
-            animation:fadeIn 1s ease;
-        }
+    background:rgba(255,255,255,0.1);
 
-        @keyframes fadeIn{
+    backdrop-filter:blur(18px);
 
-            from{
-                opacity:0;
-                transform:translateY(30px);
-            }
+    box-shadow:0 10px 40px rgba(0,0,0,0.35);
 
-            to{
-                opacity:1;
-                transform:translateY(0);
-            }
-        }
+    animation:fadeIn 1s ease;
+}
 
-        h1{
+@keyframes fadeIn{
 
-            text-align:center;
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
 
-            color:white;
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
 
-            margin-bottom:10px;
+h1{
 
-            font-size:42px;
-        }
+    color:white;
 
-        .subtitle{
+    text-align:center;
 
-            text-align:center;
+    font-size:42px;
 
-            color:#d1d5db;
+    margin-bottom:10px;
+}
 
-            margin-bottom:35px;
+.subtitle{
 
-            font-size:16px;
-        }
+    text-align:center;
 
-        .grid{
+    color:#dbeafe;
 
-            display:grid;
+    margin-bottom:35px;
 
-            grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    font-size:17px;
+}
 
-            gap:20px;
-        }
+.upload-box{
 
-        .input-box{
+    border:2px dashed rgba(255,255,255,0.4);
 
-            display:flex;
+    padding:35px;
 
-            flex-direction:column;
-        }
+    border-radius:20px;
 
-        label{
+    text-align:center;
 
-            color:white;
+    transition:0.3s;
 
-            margin-bottom:8px;
+    background:rgba(255,255,255,0.06);
+}
 
-            font-size:14px;
+.upload-box:hover{
 
-            font-weight:500;
-        }
+    transform:scale(1.01);
 
-        input{
+    border-color:#38bdf8;
+}
 
-            padding:15px;
+input[type=file]{
 
-            border:none;
+    margin-top:15px;
 
-            border-radius:14px;
+    color:white;
 
-            background:rgba(255,255,255,0.18);
+    font-size:15px;
+}
 
-            color:white;
+button{
 
-            outline:none;
+    margin-top:25px;
 
-            font-size:15px;
+    padding:16px 45px;
 
-            transition:0.3s;
-        }
+    border:none;
 
-        input:focus{
+    border-radius:50px;
 
-            background:rgba(255,255,255,0.28);
+    background:linear-gradient(135deg,#2563eb,#10b981);
 
-            transform:scale(1.02);
+    color:white;
 
-            box-shadow:0 0 10px rgba(37,99,235,0.5);
-        }
+    font-size:18px;
 
-        input::placeholder{
+    font-weight:600;
 
-            color:#d1d5db;
-        }
+    cursor:pointer;
 
-        .btn-container{
+    transition:0.4s;
+}
 
-            display:flex;
+button:hover{
 
-            justify-content:center;
+    transform:translateY(-4px) scale(1.03);
 
-            margin-top:35px;
-        }
+    box-shadow:0 12px 25px rgba(16,185,129,0.45);
+}
 
-        button{
+.result{
 
-            padding:16px 50px;
+    margin-top:35px;
 
-            border:none;
+    padding:25px;
 
-            border-radius:50px;
+    border-radius:18px;
 
-            background:linear-gradient(135deg,#2563eb,#10b981);
+    background:rgba(255,255,255,0.12);
 
-            color:white;
+    color:white;
 
-            font-size:18px;
+    font-size:18px;
 
-            font-weight:600;
+    line-height:1.8;
 
-            cursor:pointer;
+    min-height:120px;
+}
 
-            transition:0.4s;
-        }
+.metric{
 
-        button:hover{
+    color:#86efac;
 
-            transform:translateY(-4px) scale(1.03);
+    font-weight:600;
+}
 
-            box-shadow:0 10px 25px rgba(16,185,129,0.45);
-        }
+.footer{
 
-        .result{
+    margin-top:20px;
 
-            margin-top:35px;
+    text-align:center;
 
-            background:rgba(255,255,255,0.12);
+    color:#d1d5db;
 
-            padding:25px;
+    font-size:14px;
+}
 
-            border-radius:18px;
+.loader{
 
-            text-align:center;
+    display:none;
 
-            color:white;
+    margin-top:20px;
 
-            font-size:22px;
+    border:5px solid rgba(255,255,255,0.2);
 
-            min-height:120px;
+    border-top:5px solid #38bdf8;
 
-            display:flex;
+    border-radius:50%;
 
-            flex-direction:column;
+    width:50px;
 
-            justify-content:center;
-        }
+    height:50px;
 
-        .confidence{
+    animation:spin 1s linear infinite;
 
-            margin-top:12px;
+    margin-left:auto;
+    margin-right:auto;
+}
 
-            color:#d1fae5;
+@keyframes spin{
 
-            font-size:17px;
-        }
+    100%{
+        transform:rotate(360deg);
+    }
+}
 
-        .recommendation{
-
-            margin-top:10px;
-
-            font-size:15px;
-
-            color:#e5e7eb;
-        }
-
-        @media(max-width:768px){
-
-            .container{
-                padding:25px;
-            }
-
-            h1{
-                font-size:30px;
-            }
-        }
-
-    </style>
+</style>
 
 </head>
 
@@ -276,74 +251,37 @@ HTML_PAGE = """
 
 <div class="container">
 
-    <h1>⚡ Smart Electricity Prediction</h1>
+    <h1>⚡ Smart Energy Prediction System</h1>
 
     <div class="subtitle">
-        AI Powered Electricity Usage Prediction System
+        Upload Household Electricity Dataset and Predict Energy Consumption using AI
     </div>
 
-    <div class="grid">
+    <div class="upload-box">
 
-        <div class="input-box">
-            <label>Hour</label>
-            <input type="number" id="Hour" placeholder="0 - 23">
-        </div>
+        <h2 style="color:white;">📂 Upload CSV Dataset</h2>
 
-        <div class="input-box">
-            <label>Day of Week</label>
-            <input type="number" id="Day_of_Week" placeholder="1 - 7">
-        </div>
+        <input type="file" id="fileInput" accept=".csv">
 
-        <div class="input-box">
-            <label>Month</label>
-            <input type="number" id="Month" placeholder="1 - 12">
-        </div>
+        <br>
 
-        <div class="input-box">
-            <label>Number of Appliances</label>
-            <input type="number" id="Num_Appliances" placeholder="Enter count">
-        </div>
-
-        <div class="input-box">
-            <label>Household Size</label>
-            <input type="number" id="Household_Size" placeholder="Family members">
-        </div>
-
-        <div class="input-box">
-            <label>Temperature (°C)</label>
-            <input type="number" id="Temperature_C" placeholder="Temperature">
-        </div>
-
-        <div class="input-box">
-            <label>Previous Usage (kWh)</label>
-            <input type="number" id="Previous_Usage_kWh" placeholder="Previous usage">
-        </div>
-
-        <div class="input-box">
-            <label>Weekend (0 or 1)</label>
-            <input type="number" id="Is_Weekend" placeholder="0 or 1">
-        </div>
-
-        <div class="input-box">
-            <label>Solar Panel (0 or 1)</label>
-            <input type="number" id="Solar_Panel" placeholder="0 or 1">
-        </div>
-
-    </div>
-
-    <div class="btn-container">
-
-        <button onclick="predictUsage()">
-
-            Predict Usage
-
+        <button onclick="uploadDataset()">
+            Analyze Dataset
         </button>
+
+        <div class="loader" id="loader"></div>
 
     </div>
 
     <div class="result" id="resultBox">
 
-        Waiting for Prediction...
+        Waiting for dataset upload...
+
+    </div>
+
+    <div class="footer">
+
+        AI Powered Household Energy Consumption Prediction
 
     </div>
 
@@ -351,65 +289,64 @@ HTML_PAGE = """
 
 <script>
 
-async function predictUsage(){
+async function uploadDataset(){
+
+    const fileInput = document.getElementById("fileInput");
 
     const resultBox = document.getElementById("resultBox");
 
-    resultBox.innerHTML = "⏳ Predicting...";
+    const loader = document.getElementById("loader");
+
+    if(fileInput.files.length === 0){
+
+        resultBox.innerHTML = "❌ Please upload a CSV file.";
+
+        return;
+    }
+
+    loader.style.display = "block";
+
+    resultBox.innerHTML = "⏳ Processing dataset and training AI model...";
+
+    const formData = new FormData();
+
+    formData.append("file", fileInput.files[0]);
 
     try{
 
-        const response = await fetch("/predict", {
+        const response = await fetch("/analyze", {
 
             method:"POST",
 
-            headers:{
-                "Content-Type":"application/json"
-            },
-
-            body:JSON.stringify({
-
-                Hour:document.getElementById("Hour").value,
-
-                Day_of_Week:document.getElementById("Day_of_Week").value,
-
-                Month:document.getElementById("Month").value,
-
-                Num_Appliances:document.getElementById("Num_Appliances").value,
-
-                Household_Size:document.getElementById("Household_Size").value,
-
-                Temperature_C:document.getElementById("Temperature_C").value,
-
-                Previous_Usage_kWh:document.getElementById("Previous_Usage_kWh").value,
-
-                Is_Weekend:document.getElementById("Is_Weekend").value,
-
-                Solar_Panel:document.getElementById("Solar_Panel").value
-
-            })
+            body:formData
 
         });
 
         const data = await response.json();
 
+        loader.style.display = "none";
+
         if(data.success){
 
             resultBox.innerHTML = `
 
-                <div>${data.prediction}</div>
+                <h2>✅ Analysis Complete</h2>
 
-                <div class="confidence">
+                <p><span class="metric">Dataset Rows:</span> ${data.rows}</p>
 
-                    Confidence: ${data.confidence}%
+                <p><span class="metric">Dataset Columns:</span> ${data.columns}</p>
 
-                </div>
+                <p><span class="metric">Best Model:</span> Random Forest Regressor</p>
 
-                <div class="recommendation">
+                <p><span class="metric">Prediction Accuracy (R² Score):</span> ${data.accuracy}%</p>
 
-                    ${data.recommendation}
+                <p><span class="metric">Average Household Consumption:</span> ${data.avg_usage} kWh</p>
 
-                </div>
+                <p><span class="metric">Highest Consumption Family:</span> ${data.max_usage} kWh</p>
+
+                <p><span class="metric">Lowest Consumption Family:</span> ${data.min_usage} kWh</p>
+
+                <p><span class="metric">Insight:</span> ${data.insight}</p>
 
             `;
 
@@ -424,6 +361,8 @@ async function predictUsage(){
 
     catch(error){
 
+        loader.style.display = "none";
+
         resultBox.innerHTML = "❌ Server Error";
     }
 
@@ -432,83 +371,132 @@ async function predictUsage(){
 </script>
 
 </body>
-
 </html>
 
 """
 
-# =====================================================
+# =========================================================
 # HOME ROUTE
-# =====================================================
+# =========================================================
 
 @app.route("/")
 def home():
 
     return render_template_string(HTML_PAGE)
 
-# =====================================================
-# PREDICTION ROUTE
-# =====================================================
+# =========================================================
+# DATASET ANALYSIS ROUTE
+# =========================================================
 
-@app.route("/predict", methods=["POST"])
-def predict():
+@app.route("/analyze", methods=["POST"])
+def analyze():
 
     try:
 
-        if model is None:
+        if "file" not in request.files:
 
             return jsonify({
 
                 "success": False,
-                "error": "Model file not loaded"
+                "error": "No file uploaded"
 
             })
 
-        data = request.get_json()
+        file = request.files["file"]
 
-        features = np.array([[
+        df = pd.read_csv(file)
 
-            int(data.get("Hour", 0)),
-            int(data.get("Day_of_Week", 0)),
-            int(data.get("Month", 0)),
-            int(data.get("Num_Appliances", 0)),
-            int(data.get("Household_Size", 0)),
-            float(data.get("Temperature_C", 0)),
-            float(data.get("Previous_Usage_kWh", 0)),
-            int(data.get("Is_Weekend", 0)),
-            int(data.get("Solar_Panel", 0))
+        # =============================================
+        # AUTO HANDLE CATEGORICAL COLUMNS
+        # =============================================
 
-        ]])
+        for col in df.columns:
 
-        prediction = model.predict(features)[0]
+            if df[col].dtype == "object":
 
-        probability = model.predict_proba(features)[0][1]
+                le = LabelEncoder()
 
-        if prediction == 1:
+                df[col] = le.fit_transform(df[col].astype(str))
 
-            result = "⚠️ High Electricity Usage Predicted"
+        df = df.dropna()
 
-            recommendation = (
-                "Reduce appliance usage during peak hours."
-            )
+        # =============================================
+        # AUTO DETECT TARGET COLUMN
+        # =============================================
+
+        numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+        target = numeric_cols[-1]
+
+        X = df[numeric_cols[:-1]]
+
+        y = df[target]
+
+        # =============================================
+        # TRAIN BEST MODEL
+        # =============================================
+
+        X_train, X_test, y_train, y_test = train_test_split(
+
+            X, y,
+
+            test_size=0.2,
+
+            random_state=42
+
+        )
+
+        model = RandomForestRegressor(
+
+            n_estimators=300,
+
+            max_depth=12,
+
+            random_state=42
+
+        )
+
+        model.fit(X_train, y_train)
+
+        preds = model.predict(X_test)
+
+        score = r2_score(y_test, preds)
+
+        # =============================================
+        # ENERGY INSIGHTS
+        # =============================================
+
+        avg_usage = round(float(y.mean()), 2)
+
+        max_usage = round(float(y.max()), 2)
+
+        min_usage = round(float(y.min()), 2)
+
+        if avg_usage > 500:
+
+            insight = "⚠️ High overall household power consumption detected."
 
         else:
 
-            result = "✅ Low Electricity Usage Predicted"
-
-            recommendation = (
-                "Electricity usage is stable and efficient."
-            )
+            insight = "✅ Household energy consumption appears optimized."
 
         return jsonify({
 
             "success": True,
 
-            "prediction": result,
+            "rows": int(df.shape[0]),
 
-            "confidence": round(float(probability) * 100, 2),
+            "columns": int(df.shape[1]),
 
-            "recommendation": recommendation
+            "accuracy": round(score * 100, 2),
+
+            "avg_usage": avg_usage,
+
+            "max_usage": max_usage,
+
+            "min_usage": min_usage,
+
+            "insight": insight
 
         })
 
@@ -522,9 +510,9 @@ def predict():
 
         })
 
-# =====================================================
+# =========================================================
 # HEALTH CHECK
-# =====================================================
+# =========================================================
 
 @app.route("/health")
 def health():
@@ -535,9 +523,9 @@ def health():
 
     })
 
-# =====================================================
+# =========================================================
 # MAIN
-# =====================================================
+# =========================================================
 
 if __name__ == "__main__":
 
