@@ -5,12 +5,11 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import LabelEncoder
-import io
 
 app = Flask(__name__)
 
 # =========================================================
-# PROFESSIONAL HTML + CSS + JAVASCRIPT UI
+# PROFESSIONAL DARK UI
 # =========================================================
 
 HTML_PAGE = """
@@ -26,6 +25,8 @@ HTML_PAGE = """
 <title>Smart Energy Consumption Prediction</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
@@ -46,16 +47,31 @@ body{
 
     align-items:center;
 
-    overflow:hidden;
+    background:#0f172a;
 
-    background:linear-gradient(-45deg,#0f172a,#1e3a8a,#2563eb,#0f766e);
+    overflow:auto;
+
+    padding:30px;
+}
+
+.background{
+
+    position:fixed;
+
+    width:100%;
+
+    height:100%;
+
+    background:linear-gradient(-45deg,#020617,#0f172a,#1e293b,#0f172a);
 
     background-size:400% 400%;
 
-    animation:bgAnimation 12s ease infinite;
+    animation:bgMove 15s ease infinite;
+
+    z-index:-1;
 }
 
-@keyframes bgAnimation{
+@keyframes bgMove{
 
     0%{background-position:0% 50%;}
     50%{background-position:100% 50%;}
@@ -64,19 +80,21 @@ body{
 
 .container{
 
-    width:92%;
+    width:95%;
 
-    max-width:1000px;
+    max-width:1100px;
 
-    padding:40px;
+    background:rgba(15,23,42,0.92);
+
+    border:1px solid rgba(255,255,255,0.08);
 
     border-radius:30px;
 
-    background:rgba(255,255,255,0.1);
+    padding:40px;
 
-    backdrop-filter:blur(18px);
+    backdrop-filter:blur(15px);
 
-    box-shadow:0 10px 40px rgba(0,0,0,0.35);
+    box-shadow:0 10px 50px rgba(0,0,0,0.5);
 
     animation:fadeIn 1s ease;
 }
@@ -96,9 +114,9 @@ body{
 
 h1{
 
-    color:white;
-
     text-align:center;
+
+    color:white;
 
     font-size:42px;
 
@@ -109,40 +127,40 @@ h1{
 
     text-align:center;
 
-    color:#dbeafe;
+    color:#94a3b8;
 
     margin-bottom:35px;
 
-    font-size:17px;
+    font-size:16px;
 }
 
-.upload-box{
+.upload-section{
 
-    border:2px dashed rgba(255,255,255,0.4);
+    background:#111827;
+
+    border:2px dashed #334155;
+
+    border-radius:22px;
 
     padding:35px;
-
-    border-radius:20px;
 
     text-align:center;
 
     transition:0.3s;
-
-    background:rgba(255,255,255,0.06);
 }
 
-.upload-box:hover{
+.upload-section:hover{
+
+    border-color:#3b82f6;
 
     transform:scale(1.01);
-
-    border-color:#38bdf8;
 }
 
 input[type=file]{
 
-    margin-top:15px;
+    margin-top:18px;
 
-    color:white;
+    color:#e2e8f0;
 
     font-size:15px;
 }
@@ -157,11 +175,11 @@ button{
 
     border-radius:50px;
 
-    background:linear-gradient(135deg,#2563eb,#10b981);
+    background:linear-gradient(135deg,#2563eb,#06b6d4);
 
     color:white;
 
-    font-size:18px;
+    font-size:17px;
 
     font-weight:600;
 
@@ -172,68 +190,28 @@ button{
 
 button:hover{
 
-    transform:translateY(-4px) scale(1.03);
+    transform:translateY(-5px) scale(1.03);
 
-    box-shadow:0 12px 25px rgba(16,185,129,0.45);
-}
-
-.result{
-
-    margin-top:35px;
-
-    padding:25px;
-
-    border-radius:18px;
-
-    background:rgba(255,255,255,0.12);
-
-    color:white;
-
-    font-size:18px;
-
-    line-height:1.8;
-
-    min-height:120px;
-}
-
-.metric{
-
-    color:#86efac;
-
-    font-weight:600;
-}
-
-.footer{
-
-    margin-top:20px;
-
-    text-align:center;
-
-    color:#d1d5db;
-
-    font-size:14px;
+    box-shadow:0 10px 25px rgba(37,99,235,0.4);
 }
 
 .loader{
 
-    display:none;
+    margin:25px auto;
 
-    margin-top:20px;
+    border:5px solid rgba(255,255,255,0.1);
 
-    border:5px solid rgba(255,255,255,0.2);
-
-    border-top:5px solid #38bdf8;
+    border-top:5px solid #3b82f6;
 
     border-radius:50%;
 
-    width:50px;
+    width:55px;
 
-    height:50px;
+    height:55px;
 
     animation:spin 1s linear infinite;
 
-    margin-left:auto;
-    margin-right:auto;
+    display:none;
 }
 
 @keyframes spin{
@@ -243,23 +221,112 @@ button:hover{
     }
 }
 
+.result{
+
+    margin-top:35px;
+
+    background:#111827;
+
+    border-radius:25px;
+
+    padding:30px;
+
+    color:white;
+
+    min-height:120px;
+}
+
+.grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+
+    gap:20px;
+
+    margin-top:25px;
+}
+
+.card{
+
+    background:#1e293b;
+
+    padding:25px;
+
+    border-radius:20px;
+
+    text-align:center;
+
+    transition:0.3s;
+}
+
+.card:hover{
+
+    transform:translateY(-5px);
+
+    background:#243041;
+}
+
+.card h3{
+
+    color:#93c5fd;
+
+    font-size:16px;
+
+    margin-bottom:10px;
+}
+
+.card p{
+
+    font-size:24px;
+
+    font-weight:700;
+}
+
+.chart-container{
+
+    margin-top:40px;
+
+    display:flex;
+
+    justify-content:center;
+}
+
+canvas{
+
+    max-width:380px;
+}
+
+.footer{
+
+    text-align:center;
+
+    color:#64748b;
+
+    margin-top:25px;
+
+    font-size:14px;
+}
+
 </style>
 
 </head>
 
 <body>
 
+<div class="background"></div>
+
 <div class="container">
 
-    <h1>⚡ Smart Energy Prediction System</h1>
+    <h1>Smart Energy Consumption Prediction</h1>
 
     <div class="subtitle">
-        Upload Household Electricity Dataset and Predict Energy Consumption using AI
+        Upload Household Electricity Dataset and Analyze Power Consumption Using Artificial Intelligence
     </div>
 
-    <div class="upload-box">
+    <div class="upload-section">
 
-        <h2 style="color:white;">📂 Upload CSV Dataset</h2>
+        <h2 style="color:white;">Upload CSV Dataset</h2>
 
         <input type="file" id="fileInput" accept=".csv">
 
@@ -279,15 +346,23 @@ button:hover{
 
     </div>
 
+    <div class="chart-container">
+
+        <canvas id="donutChart"></canvas>
+
+    </div>
+
     <div class="footer">
 
-        AI Powered Household Energy Consumption Prediction
+        AI Powered Household Electricity Consumption Analytics
 
     </div>
 
 </div>
 
 <script>
+
+let donutChart;
 
 async function uploadDataset(){
 
@@ -299,14 +374,14 @@ async function uploadDataset(){
 
     if(fileInput.files.length === 0){
 
-        resultBox.innerHTML = "❌ Please upload a CSV file.";
+        resultBox.innerHTML = "Please upload a CSV file.";
 
         return;
     }
 
     loader.style.display = "block";
 
-    resultBox.innerHTML = "⏳ Processing dataset and training AI model...";
+    resultBox.innerHTML = "Processing dataset and training AI model...";
 
     const formData = new FormData();
 
@@ -330,31 +405,57 @@ async function uploadDataset(){
 
             resultBox.innerHTML = `
 
-                <h2>✅ Analysis Complete</h2>
+                <div class="grid">
 
-                <p><span class="metric">Dataset Rows:</span> ${data.rows}</p>
+                    <div class="card">
+                        <h3>Dataset Rows</h3>
+                        <p>${data.rows}</p>
+                    </div>
 
-                <p><span class="metric">Dataset Columns:</span> ${data.columns}</p>
+                    <div class="card">
+                        <h3>Dataset Columns</h3>
+                        <p>${data.columns}</p>
+                    </div>
 
-                <p><span class="metric">Best Model:</span> Random Forest Regressor</p>
+                    <div class="card">
+                        <h3>Model Accuracy</h3>
+                        <p>${data.accuracy}%</p>
+                    </div>
 
-                <p><span class="metric">Prediction Accuracy (R² Score):</span> ${data.accuracy}%</p>
+                    <div class="card">
+                        <h3>Average Consumption</h3>
+                        <p>${data.avg_usage}</p>
+                    </div>
 
-                <p><span class="metric">Average Household Consumption:</span> ${data.avg_usage} kWh</p>
+                    <div class="card">
+                        <h3>Maximum Consumption</h3>
+                        <p>${data.max_usage}</p>
+                    </div>
 
-                <p><span class="metric">Highest Consumption Family:</span> ${data.max_usage} kWh</p>
+                    <div class="card">
+                        <h3>Minimum Consumption</h3>
+                        <p>${data.min_usage}</p>
+                    </div>
 
-                <p><span class="metric">Lowest Consumption Family:</span> ${data.min_usage} kWh</p>
+                </div>
 
-                <p><span class="metric">Insight:</span> ${data.insight}</p>
+                <div style="margin-top:30px;font-size:17px;color:#cbd5e1;">
+                    ${data.insight}
+                </div>
 
             `;
+
+            createDonutChart(
+                data.avg_usage,
+                data.max_usage,
+                data.min_usage
+            );
 
         }
 
         else{
 
-            resultBox.innerHTML = "❌ Error: " + data.error;
+            resultBox.innerHTML = "Error: " + data.error;
         }
 
     }
@@ -363,9 +464,64 @@ async function uploadDataset(){
 
         loader.style.display = "none";
 
-        resultBox.innerHTML = "❌ Server Error";
+        resultBox.innerHTML = "Server Error";
     }
 
+}
+
+function createDonutChart(avg,max,min){
+
+    const ctx = document.getElementById("donutChart");
+
+    if(donutChart){
+
+        donutChart.destroy();
+    }
+
+    donutChart = new Chart(ctx, {
+
+        type:'doughnut',
+
+        data:{
+
+            labels:[
+                'Average Consumption',
+                'Maximum Consumption',
+                'Minimum Consumption'
+            ],
+
+            datasets:[{
+
+                data:[avg,max,min],
+
+                backgroundColor:[
+                    '#3b82f6',
+                    '#06b6d4',
+                    '#10b981'
+                ],
+
+                borderWidth:0
+            }]
+        },
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+
+                legend:{
+
+                    labels:{
+                        color:'white',
+                        font:{
+                            size:14
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 </script>
@@ -385,7 +541,7 @@ def home():
     return render_template_string(HTML_PAGE)
 
 # =========================================================
-# DATASET ANALYSIS ROUTE
+# DATASET ANALYSIS
 # =========================================================
 
 @app.route("/analyze", methods=["POST"])
@@ -406,8 +562,10 @@ def analyze():
 
         df = pd.read_csv(file)
 
+        df.dropna(inplace=True)
+
         # =============================================
-        # AUTO HANDLE CATEGORICAL COLUMNS
+        # ENCODE CATEGORICAL COLUMNS
         # =============================================
 
         for col in df.columns:
@@ -418,13 +576,20 @@ def analyze():
 
                 df[col] = le.fit_transform(df[col].astype(str))
 
-        df = df.dropna()
-
-        # =============================================
-        # AUTO DETECT TARGET COLUMN
-        # =============================================
-
         numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+        if len(numeric_cols) < 2:
+
+            return jsonify({
+
+                "success": False,
+                "error": "Dataset needs at least 2 numeric columns"
+
+            })
+
+        # =============================================
+        # TARGET COLUMN
+        # =============================================
 
         target = numeric_cols[-1]
 
@@ -433,12 +598,13 @@ def analyze():
         y = df[target]
 
         # =============================================
-        # TRAIN BEST MODEL
+        # TRAIN MODEL
         # =============================================
 
         X_train, X_test, y_train, y_test = train_test_split(
 
-            X, y,
+            X,
+            y,
 
             test_size=0.2,
 
@@ -450,7 +616,7 @@ def analyze():
 
             n_estimators=300,
 
-            max_depth=12,
+            max_depth=14,
 
             random_state=42
 
@@ -460,10 +626,10 @@ def analyze():
 
         preds = model.predict(X_test)
 
-        score = r2_score(y_test, preds)
+        accuracy = r2_score(y_test, preds)
 
         # =============================================
-        # ENERGY INSIGHTS
+        # METRICS
         # =============================================
 
         avg_usage = round(float(y.mean()), 2)
@@ -474,11 +640,11 @@ def analyze():
 
         if avg_usage > 500:
 
-            insight = "⚠️ High overall household power consumption detected."
+            insight = "High household electricity consumption detected. Energy optimization is recommended."
 
         else:
 
-            insight = "✅ Household energy consumption appears optimized."
+            insight = "Electricity usage appears optimized and balanced."
 
         return jsonify({
 
@@ -488,7 +654,7 @@ def analyze():
 
             "columns": int(df.shape[1]),
 
-            "accuracy": round(score * 100, 2),
+            "accuracy": round(accuracy * 100, 2),
 
             "avg_usage": avg_usage,
 
@@ -519,7 +685,7 @@ def health():
 
     return jsonify({
 
-        "status": "running"
+        "status":"running"
 
     })
 
