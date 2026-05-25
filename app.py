@@ -4,10 +4,8 @@ import os
 
 app = Flask(__name__)
 
-
 # =========================================================
-# REPLACE ONLY HTML_PAGE
-# ADVANCED UI FOR YOUR 600 ROW DATASET
+# ADVANCED HTML UI
 # =========================================================
 
 HTML_PAGE = """
@@ -915,10 +913,19 @@ function createCharts(avg,max,min,bill){
 </html>
 
 """
+
+# =========================================================
+# HOME ROUTE
+# =========================================================
+
 @app.route("/")
 def home():
 
     return render_template_string(HTML_PAGE)
+
+# =========================================================
+# ANALYZE ROUTE
+# =========================================================
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -938,12 +945,69 @@ def analyze():
 
         consumer = request.form.get(
             "consumer_id",
-            "N/A"
-        )
+            ""
+        ).strip()
 
         df = pd.read_csv(file)
 
-        numeric_columns = df.select_dtypes(include="number")
+        # =====================================================
+        # FIND CUSTOMER / BILL COLUMN
+        # =====================================================
+
+        possible_columns = [
+
+            "Consumer_ID",
+            "Customer_ID",
+            "Bill_Number",
+            "Bill_ID"
+
+        ]
+
+        search_column = None
+
+        for col in possible_columns:
+
+            if col in df.columns:
+
+                search_column = col
+                break
+
+        # =====================================================
+        # FILTER CUSTOMER DATA
+        # =====================================================
+
+        if consumer != "" and search_column is not None:
+
+            filtered_df = df[
+                df[search_column]
+                .astype(str)
+                .str.lower()
+                ==
+                consumer.lower()
+            ]
+
+            if filtered_df.empty:
+
+                return jsonify({
+
+                    "success": False,
+                    "error": "Customer ID / Bill Number not found"
+
+                })
+
+            working_df = filtered_df
+
+        else:
+
+            working_df = df
+
+        # =====================================================
+        # NUMERIC DATA
+        # =====================================================
+
+        numeric_columns = working_df.select_dtypes(
+            include="number"
+        )
 
         if numeric_columns.empty:
 
@@ -954,9 +1018,38 @@ def analyze():
 
             })
 
-        usage_column = numeric_columns.columns[-1]
+        # =====================================================
+        # FIND USAGE COLUMN
+        # =====================================================
 
-        usage_data = numeric_columns[usage_column]
+        usage_column = None
+
+        possible_usage_columns = [
+
+            "Units_Consumed",
+            "Units",
+            "Usage",
+            "Electricity_Usage",
+            "kWh"
+
+        ]
+
+        for col in possible_usage_columns:
+
+            if col in working_df.columns:
+
+                usage_column = col
+                break
+
+        if usage_column is None:
+
+            usage_column = numeric_columns.columns[-1]
+
+        usage_data = working_df[usage_column]
+
+        # =====================================================
+        # ANALYTICS
+        # =====================================================
 
         average = round(float(usage_data.mean()), 2)
 
@@ -967,6 +1060,10 @@ def analyze():
         total = round(float(usage_data.sum()), 2)
 
         bill = round(total * 8.5, 2)
+
+        # =====================================================
+        # RECOMMENDATIONS
+        # =====================================================
 
         if average > 500:
 
@@ -1006,11 +1103,25 @@ def analyze():
 
             score = 92
 
+        # =====================================================
+        # CUSTOMER DETAILS
+        # =====================================================
+
+        consumer_name = (
+            consumer
+            if consumer != ""
+            else "FULL DATASET"
+        )
+
+        # =====================================================
+        # RESPONSE
+        # =====================================================
+
         return jsonify({
 
             "success": True,
 
-            "consumer": consumer,
+            "consumer": consumer_name,
 
             "average": average,
 
@@ -1039,6 +1150,10 @@ def analyze():
 
         })
 
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
 @app.route("/health")
 def health():
 
@@ -1047,6 +1162,10 @@ def health():
         "status": "running"
 
     })
+
+# =========================================================
+# MAIN
+# =========================================================
 
 if __name__ == "__main__":
 
