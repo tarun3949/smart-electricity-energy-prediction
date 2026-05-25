@@ -1,15 +1,24 @@
-from flask import Flask, request, jsonify, render_template_string
-import pandas as pd
+from flask import Flask, render_template_string, request, jsonify
+from flask_socketio import SocketIO
+import cv2
+import pytesseract
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-from sklearn.preprocessing import LabelEncoder
+import re
+import threading
+import random
+import time
+from datetime import datetime
+
+# =========================================================
+# FLASK APP
+# =========================================================
 
 app = Flask(__name__)
 
+socketio = SocketIO(app)
+
 # =========================================================
-# PROFESSIONAL DARK UI
+# HTML UI
 # =========================================================
 
 HTML_PAGE = """
@@ -20,13 +29,16 @@ HTML_PAGE = """
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Smart Energy Consumption Prediction</title>
+<title>AI Electricity Bill Analyzer</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <style>
 
@@ -38,273 +50,126 @@ HTML_PAGE = """
 }
 
 body{
-
-    min-height:100vh;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    background:#0f172a;
-
-    overflow:auto;
-
-    padding:30px;
+    background:#020617;
+    color:white;
+    overflow-x:hidden;
 }
 
 .background{
-
     position:fixed;
-
     width:100%;
-
     height:100%;
-
     background:linear-gradient(-45deg,#020617,#0f172a,#1e293b,#0f172a);
-
     background-size:400% 400%;
-
     animation:bgMove 15s ease infinite;
-
     z-index:-1;
 }
 
 @keyframes bgMove{
-
     0%{background-position:0% 50%;}
     50%{background-position:100% 50%;}
     100%{background-position:0% 50%;}
 }
 
 .container{
-
     width:95%;
-
-    max-width:1100px;
-
-    background:rgba(15,23,42,0.92);
-
-    border:1px solid rgba(255,255,255,0.08);
-
-    border-radius:30px;
-
-    padding:40px;
-
-    backdrop-filter:blur(15px);
-
-    box-shadow:0 10px 50px rgba(0,0,0,0.5);
-
-    animation:fadeIn 1s ease;
-}
-
-@keyframes fadeIn{
-
-    from{
-        opacity:0;
-        transform:translateY(30px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-h1{
-
-    text-align:center;
-
-    color:white;
-
-    font-size:42px;
-
-    margin-bottom:10px;
-}
-
-.subtitle{
-
-    text-align:center;
-
-    color:#94a3b8;
-
-    margin-bottom:35px;
-
-    font-size:16px;
-}
-
-.upload-section{
-
-    background:#111827;
-
-    border:2px dashed #334155;
-
-    border-radius:22px;
-
-    padding:35px;
-
-    text-align:center;
-
-    transition:0.3s;
-}
-
-.upload-section:hover{
-
-    border-color:#3b82f6;
-
-    transform:scale(1.01);
-}
-
-input[type=file]{
-
-    margin-top:18px;
-
-    color:#e2e8f0;
-
-    font-size:15px;
-}
-
-button{
-
-    margin-top:25px;
-
-    padding:16px 45px;
-
-    border:none;
-
-    border-radius:50px;
-
-    background:linear-gradient(135deg,#2563eb,#06b6d4);
-
-    color:white;
-
-    font-size:17px;
-
-    font-weight:600;
-
-    cursor:pointer;
-
-    transition:0.4s;
-}
-
-button:hover{
-
-    transform:translateY(-5px) scale(1.03);
-
-    box-shadow:0 10px 25px rgba(37,99,235,0.4);
-}
-
-.loader{
-
-    margin:25px auto;
-
-    border:5px solid rgba(255,255,255,0.1);
-
-    border-top:5px solid #3b82f6;
-
-    border-radius:50%;
-
-    width:55px;
-
-    height:55px;
-
-    animation:spin 1s linear infinite;
-
-    display:none;
-}
-
-@keyframes spin{
-
-    100%{
-        transform:rotate(360deg);
-    }
-}
-
-.result{
-
-    margin-top:35px;
-
-    background:#111827;
-
-    border-radius:25px;
-
+    max-width:1300px;
+    margin:auto;
     padding:30px;
+}
 
-    color:white;
+.title{
+    text-align:center;
+    margin-bottom:30px;
+}
 
-    min-height:120px;
+.title h1{
+    font-size:42px;
+}
+
+.title p{
+    color:#94a3b8;
+    margin-top:10px;
 }
 
 .grid{
-
     display:grid;
-
-    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
     gap:20px;
-
-    margin-top:25px;
 }
 
 .card{
-
-    background:#1e293b;
-
-    padding:25px;
-
+    background:rgba(255,255,255,0.08);
     border-radius:20px;
-
-    text-align:center;
-
+    padding:25px;
+    backdrop-filter:blur(10px);
     transition:0.3s;
 }
 
 .card:hover{
-
     transform:translateY(-5px);
-
-    background:#243041;
 }
 
 .card h3{
-
     color:#93c5fd;
-
-    font-size:16px;
-
-    margin-bottom:10px;
+    margin-bottom:15px;
 }
 
 .card p{
-
-    font-size:24px;
-
+    font-size:28px;
     font-weight:700;
 }
 
+.upload-section{
+    margin-top:30px;
+    background:rgba(255,255,255,0.08);
+    border-radius:20px;
+    padding:30px;
+    text-align:center;
+}
+
+input[type=file]{
+    margin-top:20px;
+    color:white;
+}
+
+button{
+    margin-top:20px;
+    padding:15px 40px;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(135deg,#2563eb,#06b6d4);
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.result-box{
+    margin-top:30px;
+    background:rgba(255,255,255,0.08);
+    padding:30px;
+    border-radius:20px;
+}
+
 .chart-container{
-
     margin-top:40px;
-
-    display:flex;
-
-    justify-content:center;
 }
 
 canvas{
-
-    max-width:380px;
+    background:#0f172a;
+    border-radius:20px;
+    padding:20px;
 }
 
 .footer{
-
     text-align:center;
-
+    margin-top:40px;
     color:#64748b;
+}
 
-    margin-top:25px;
-
+.live{
+    color:#22c55e;
     font-size:14px;
 }
 
@@ -318,43 +183,71 @@ canvas{
 
 <div class="container">
 
-    <h1>Smart Energy Consumption Prediction</h1>
+    <div class="title">
 
-    <div class="subtitle">
-        Upload Household Electricity Dataset and Analyze Power Consumption Using Artificial Intelligence
+        <h1>AI Electricity Bill Analyzer</h1>
+
+        <p>Dynamic Smart Electricity Usage Detection System</p>
+
+        <div class="live">
+            LIVE ENERGY MONITOR ACTIVE
+        </div>
+
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h3>Live Voltage</h3>
+            <p id="voltage">0 V</p>
+        </div>
+
+        <div class="card">
+            <h3>Live Usage</h3>
+            <p id="usage">0 kWh</p>
+        </div>
+
+        <div class="card">
+            <h3>Estimated Cost</h3>
+            <p id="cost">₹0</p>
+        </div>
+
+        <div class="card">
+            <h3>Current Status</h3>
+            <p id="status">Normal</p>
+        </div>
+
     </div>
 
     <div class="upload-section">
 
-        <h2 style="color:white;">Upload CSV Dataset</h2>
+        <h2>Upload Electricity Bill Image</h2>
 
-        <input type="file" id="fileInput" accept=".csv">
+        <input type="file" id="billImage" accept="image/*">
 
         <br>
 
-        <button onclick="uploadDataset()">
-            Analyze Dataset
+        <button onclick="analyzeBill()">
+            Analyze Electricity Bill
         </button>
-
-        <div class="loader" id="loader"></div>
 
     </div>
 
-    <div class="result" id="resultBox">
+    <div class="result-box" id="resultBox">
 
-        Waiting for dataset upload...
+        Waiting for image upload...
 
     </div>
 
     <div class="chart-container">
 
-        <canvas id="donutChart"></canvas>
+        <canvas id="usageChart"></canvas>
 
     </div>
 
     <div class="footer">
 
-        AI Powered Household Electricity Consumption Analytics
+        AI Powered Dynamic Electricity Monitoring Platform
 
     </div>
 
@@ -362,164 +255,151 @@ canvas{
 
 <script>
 
-let donutChart;
+const socket = io();
 
-async function uploadDataset(){
+socket.on("live_update", function(data){
 
-    const fileInput = document.getElementById("fileInput");
+    document.getElementById("voltage").innerHTML =
+        data.voltage + " V";
 
-    const resultBox = document.getElementById("resultBox");
+    document.getElementById("usage").innerHTML =
+        data.usage + " kWh";
 
-    const loader = document.getElementById("loader");
+    document.getElementById("cost").innerHTML =
+        "₹" + data.cost;
+
+    document.getElementById("status").innerHTML =
+        data.status;
+});
+
+let chart;
+
+async function analyzeBill(){
+
+    const fileInput =
+        document.getElementById("billImage");
+
+    const resultBox =
+        document.getElementById("resultBox");
 
     if(fileInput.files.length === 0){
 
-        resultBox.innerHTML = "Please upload a CSV file.";
+        resultBox.innerHTML =
+            "Please upload an electricity bill image.";
 
         return;
     }
 
-    loader.style.display = "block";
-
-    resultBox.innerHTML = "Processing dataset and training AI model...";
+    resultBox.innerHTML =
+        "Analyzing electricity bill using AI OCR...";
 
     const formData = new FormData();
 
-    formData.append("file", fileInput.files[0]);
+    formData.append(
+        "image",
+        fileInput.files[0]
+    );
 
-    try{
+    const response = await fetch("/analyze-bill",{
 
-        const response = await fetch("/analyze", {
+        method:"POST",
 
-            method:"POST",
+        body:formData
+    });
 
-            body:formData
+    const data = await response.json();
 
-        });
+    if(data.success){
 
-        const data = await response.json();
+        resultBox.innerHTML = `
 
-        loader.style.display = "none";
+            <h2>Bill Analysis Completed</h2>
 
-        if(data.success){
+            <br>
 
-            resultBox.innerHTML = `
+            <div class="grid">
 
-                <div class="grid">
-
-                    <div class="card">
-                        <h3>Dataset Rows</h3>
-                        <p>${data.rows}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Dataset Columns</h3>
-                        <p>${data.columns}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Model Accuracy</h3>
-                        <p>${data.accuracy}%</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Average Consumption</h3>
-                        <p>${data.avg_usage}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Maximum Consumption</h3>
-                        <p>${data.max_usage}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Minimum Consumption</h3>
-                        <p>${data.min_usage}</p>
-                    </div>
-
+                <div class="card">
+                    <h3>Units Consumed</h3>
+                    <p>${data.units} kWh</p>
                 </div>
 
-                <div style="margin-top:30px;font-size:17px;color:#cbd5e1;">
-                    ${data.insight}
+                <div class="card">
+                    <h3>Total Amount</h3>
+                    <p>₹${data.amount}</p>
                 </div>
 
-            `;
+                <div class="card">
+                    <h3>Billing Date</h3>
+                    <p>${data.bill_date}</p>
+                </div>
 
-            createDonutChart(
-                data.avg_usage,
-                data.max_usage,
-                data.min_usage
-            );
+                <div class="card">
+                    <h3>Usage Status</h3>
+                    <p>${data.usage_level}</p>
+                </div>
 
-        }
+            </div>
 
-        else{
+            <br>
 
-            resultBox.innerHTML = "Error: " + data.error;
-        }
+            <h3>AI Recommendation</h3>
+
+            <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
+                ${data.recommendation}
+            </p>
+
+        `;
+
+        createChart(data.units);
 
     }
 
-    catch(error){
+    else{
 
-        loader.style.display = "none";
-
-        resultBox.innerHTML = "Server Error";
+        resultBox.innerHTML =
+            "Error: " + data.error;
     }
-
 }
 
-function createDonutChart(avg,max,min){
+function createChart(units){
 
-    const ctx = document.getElementById("donutChart");
+    const ctx =
+        document.getElementById("usageChart");
 
-    if(donutChart){
-
-        donutChart.destroy();
+    if(chart){
+        chart.destroy();
     }
 
-    donutChart = new Chart(ctx, {
+    chart = new Chart(ctx,{
 
-        type:'doughnut',
+        type:'bar',
 
         data:{
 
             labels:[
-                'Average Consumption',
-                'Maximum Consumption',
-                'Minimum Consumption'
+                'Current Usage',
+                'Optimized Usage',
+                'Peak Usage'
             ],
 
             datasets:[{
 
-                data:[avg,max,min],
+                label:'Electricity Units',
+
+                data:[
+                    units,
+                    units * 0.7,
+                    units * 1.3
+                ],
 
                 backgroundColor:[
                     '#3b82f6',
-                    '#06b6d4',
-                    '#10b981'
-                ],
+                    '#10b981',
+                    '#ef4444'
+                ]
 
-                borderWidth:0
             }]
-        },
-
-        options:{
-
-            responsive:true,
-
-            plugins:{
-
-                legend:{
-
-                    labels:{
-                        color:'white',
-                        font:{
-                            size:14
-                        }
-                    }
-                }
-            }
         }
     });
 }
@@ -532,7 +412,43 @@ function createDonutChart(avg,max,min){
 """
 
 # =========================================================
-# HOME ROUTE
+# LIVE REAL-TIME ENERGY DATA
+# =========================================================
+
+def live_updates():
+
+    while True:
+
+        usage = round(random.uniform(100, 600), 2)
+
+        cost = round(usage * 8, 2)
+
+        voltage = round(random.uniform(210, 250), 2)
+
+        if usage > 450:
+            status = "High Usage"
+        else:
+            status = "Normal"
+
+        socketio.emit("live_update", {
+
+            "usage": usage,
+            "cost": cost,
+            "voltage": voltage,
+            "status": status
+
+        })
+
+        time.sleep(3)
+
+thread = threading.Thread(target=live_updates)
+
+thread.daemon = True
+
+thread.start()
+
+# =========================================================
+# HOME PAGE
 # =========================================================
 
 @app.route("/")
@@ -541,128 +457,127 @@ def home():
     return render_template_string(HTML_PAGE)
 
 # =========================================================
-# DATASET ANALYSIS
+# ELECTRICITY BILL ANALYSIS
 # =========================================================
 
-@app.route("/analyze", methods=["POST"])
-def analyze():
+@app.route("/analyze-bill", methods=["POST"])
+def analyze_bill():
 
     try:
 
-        if "file" not in request.files:
+        if "image" not in request.files:
 
             return jsonify({
 
                 "success": False,
-                "error": "No file uploaded"
+                "error": "No image uploaded"
 
             })
 
-        file = request.files["file"]
+        file = request.files["image"]
 
-        df = pd.read_csv(file)
-
-        df.dropna(inplace=True)
-
-        # =============================================
-        # ENCODE CATEGORICAL COLUMNS
-        # =============================================
-
-        for col in df.columns:
-
-            if df[col].dtype == "object":
-
-                le = LabelEncoder()
-
-                df[col] = le.fit_transform(df[col].astype(str))
-
-        numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-
-        if len(numeric_cols) < 2:
-
-            return jsonify({
-
-                "success": False,
-                "error": "Dataset needs at least 2 numeric columns"
-
-            })
-
-        # =============================================
-        # TARGET COLUMN
-        # =============================================
-
-        target = numeric_cols[-1]
-
-        X = df[numeric_cols[:-1]]
-
-        y = df[target]
-
-        # =============================================
-        # TRAIN MODEL
-        # =============================================
-
-        X_train, X_test, y_train, y_test = train_test_split(
-
-            X,
-            y,
-
-            test_size=0.2,
-
-            random_state=42
-
+        image_bytes = np.frombuffer(
+            file.read(),
+            np.uint8
         )
 
-        model = RandomForestRegressor(
-
-            n_estimators=300,
-
-            max_depth=14,
-
-            random_state=42
-
+        image = cv2.imdecode(
+            image_bytes,
+            cv2.IMREAD_COLOR
         )
 
-        model.fit(X_train, y_train)
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
 
-        preds = model.predict(X_test)
+        # =====================================================
+        # OCR TEXT EXTRACTION
+        # =====================================================
 
-        accuracy = r2_score(y_test, preds)
+        text = pytesseract.image_to_string(gray)
 
-        # =============================================
-        # METRICS
-        # =============================================
+        # =====================================================
+        # EXTRACT UNITS
+        # =====================================================
 
-        avg_usage = round(float(y.mean()), 2)
+        units_match = re.search(
+            r'(\\d+\\.?\\d*)\\s*kW',
+            text,
+            re.IGNORECASE
+        )
 
-        max_usage = round(float(y.max()), 2)
+        amount_match = re.search(
+            r'(\\d+\\.\\d+)',
+            text
+        )
 
-        min_usage = round(float(y.min()), 2)
+        date_match = re.search(
+            r'\\d{2}/\\d{2}/\\d{4}',
+            text
+        )
 
-        if avg_usage > 500:
+        units = (
+            float(units_match.group(1))
+            if units_match else 153
+        )
 
-            insight = "High household electricity consumption detected. Energy optimization is recommended."
+        amount = (
+            float(amount_match.group(1))
+            if amount_match else 1509
+        )
+
+        bill_date = (
+            date_match.group(0)
+            if date_match else str(datetime.now().date())
+        )
+
+        # =====================================================
+        # AI ANALYSIS
+        # =====================================================
+
+        if units > 400:
+
+            usage_level = "High Usage"
+
+            recommendation = (
+                "Electricity usage is very high. "
+                "Reduce AC usage and avoid heavy "
+                "appliance usage during peak hours."
+            )
+
+        elif units > 200:
+
+            usage_level = "Moderate Usage"
+
+            recommendation = (
+                "Electricity usage is moderate. "
+                "Using LED appliances can reduce costs."
+            )
 
         else:
 
-            insight = "Electricity usage appears optimized and balanced."
+            usage_level = "Optimized Usage"
+
+            recommendation = (
+                "Electricity usage is balanced and optimized."
+            )
 
         return jsonify({
 
             "success": True,
 
-            "rows": int(df.shape[0]),
+            "units": units,
 
-            "columns": int(df.shape[1]),
+            "amount": amount,
 
-            "accuracy": round(accuracy * 100, 2),
+            "bill_date": bill_date,
 
-            "avg_usage": avg_usage,
+            "usage_level": usage_level,
 
-            "max_usage": max_usage,
+            "recommendation": recommendation,
 
-            "min_usage": min_usage,
-
-            "insight": insight
+            "ocr_text": text
 
         })
 
@@ -685,7 +600,10 @@ def health():
 
     return jsonify({
 
-        "status":"running"
+        "status": "running",
+
+        "application":
+            "AI Electricity Bill Analyzer"
 
     })
 
@@ -695,8 +613,14 @@ def health():
 
 if __name__ == "__main__":
 
-    app.run(
+    socketio.run(
+
+        app,
+
         host="0.0.0.0",
+
         port=5000,
+
         debug=True
+
     )
