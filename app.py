@@ -1,8 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
 import pandas as pd
-import random
 import os
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -16,7 +14,7 @@ HTML_PAGE = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Smart Electricity Intelligence System</title>
+<title>Smart Electricity Intelligence</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -33,8 +31,8 @@ HTML_PAGE = """
 
 body{
     background:#020617;
-    overflow-x:hidden;
     color:white;
+    overflow-x:hidden;
 }
 
 .background{
@@ -57,12 +55,10 @@ body{
 
 .header{
     text-align:center;
-    animation:fadeIn 1s ease;
 }
 
 .header h1{
-    font-size:56px;
-    font-weight:700;
+    font-size:55px;
     background:linear-gradient(90deg,#60a5fa,#06b6d4,#34d399);
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
@@ -71,108 +67,63 @@ body{
 .header p{
     margin-top:10px;
     color:#94a3b8;
-    font-size:18px;
-}
-
-.live-status{
-    margin-top:20px;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    background:#0f172a;
-    padding:10px 20px;
-    border-radius:40px;
-    border:1px solid #1e293b;
-}
-
-.dot{
-    width:12px;
-    height:12px;
-    border-radius:50%;
-    background:#22c55e;
-    animation:pulse 1s infinite;
-}
-
-@keyframes pulse{
-    0%{opacity:1;}
-    50%{opacity:0.3;}
-    100%{opacity:1;}
 }
 
 .upload-box{
     margin-top:40px;
-    background:rgba(15,23,42,0.85);
-    backdrop-filter:blur(12px);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:30px;
-    padding:50px;
+    background:#0f172a;
+    border-radius:25px;
+    padding:40px;
     text-align:center;
+    border:1px solid rgba(255,255,255,0.08);
     transition:0.4s;
-    box-shadow:0 10px 50px rgba(0,0,0,0.4);
 }
 
 .upload-box:hover{
     transform:translateY(-5px);
-    border-color:#3b82f6;
-}
-
-.upload-icon{
-    font-size:70px;
-    animation:float 3s ease infinite;
-}
-
-@keyframes float{
-    0%{transform:translateY(0px);}
-    50%{transform:translateY(-12px);}
-    100%{transform:translateY(0px);}
 }
 
 input[type=file]{
-    margin-top:25px;
+    margin-top:20px;
     color:white;
 }
 
-.bill-search{
-    margin-top:30px;
-}
-
-.bill-search input{
+input[type=text]{
     width:320px;
+    margin-top:20px;
     padding:15px;
     border:none;
     border-radius:50px;
     background:#1e293b;
     color:white;
     outline:none;
-    font-size:16px;
 }
 
 button{
     margin-top:25px;
-    padding:15px 45px;
+    padding:15px 40px;
     border:none;
     border-radius:50px;
     background:linear-gradient(135deg,#2563eb,#06b6d4);
     color:white;
-    font-size:17px;
-    font-weight:600;
+    font-size:16px;
     cursor:pointer;
+    font-weight:600;
     transition:0.4s;
 }
 
 button:hover{
-    transform:translateY(-5px) scale(1.03);
-    box-shadow:0 10px 30px rgba(37,99,235,0.5);
+    transform:scale(1.05);
 }
 
 .loader{
-    width:70px;
-    height:70px;
+    width:60px;
+    height:60px;
     border:6px solid rgba(255,255,255,0.1);
     border-top:6px solid #38bdf8;
     border-radius:50%;
     animation:spin 1s linear infinite;
-    margin:30px auto;
+    margin:25px auto;
     display:none;
 }
 
@@ -184,99 +135,54 @@ button:hover{
 
 .dashboard{
     margin-top:40px;
-    animation:fadeIn 1s ease;
 }
 
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
     gap:25px;
 }
 
 .card{
-    background:rgba(15,23,42,0.9);
-    border-radius:25px;
+    background:#111827;
     padding:30px;
-    position:relative;
-    overflow:hidden;
+    border-radius:25px;
     transition:0.4s;
-    border:1px solid rgba(255,255,255,0.06);
 }
 
 .card:hover{
     transform:translateY(-8px);
-    box-shadow:0 10px 30px rgba(0,0,0,0.4);
-}
-
-.card::before{
-    content:"";
-    position:absolute;
-    width:150%;
-    height:150%;
-    background:linear-gradient(
-        45deg,
-        transparent,
-        rgba(255,255,255,0.08),
-        transparent
-    );
-    top:-100%;
-    left:-100%;
-    transition:0.8s;
-}
-
-.card:hover::before{
-    top:100%;
-    left:100%;
 }
 
 .card h3{
     color:#93c5fd;
     margin-bottom:15px;
-    font-size:16px;
 }
 
 .card p{
-    font-size:34px;
+    font-size:32px;
     font-weight:700;
 }
 
-.charts{
-    margin-top:40px;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
-    gap:30px;
-}
-
 .chart-box{
+    margin-top:40px;
     background:#111827;
     border-radius:25px;
-    padding:25px;
+    padding:30px;
 }
 
 .info-box{
     margin-top:30px;
     background:#111827;
-    padding:30px;
     border-radius:25px;
+    padding:30px;
     line-height:1.8;
 }
 
 .footer{
     text-align:center;
-    margin-top:50px;
+    margin-top:40px;
     color:#64748b;
-    font-size:14px;
-}
-
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(30px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
 }
 
 </style>
@@ -291,54 +197,32 @@ button:hover{
 
     <div class="header">
 
-        <h1>⚡ Smart Electricity Intelligence</h1>
+        <h1>Smart Electricity Intelligence</h1>
 
         <p>
-            AI Powered Energy Consumption Analytics Dashboard
+            AI Powered Electricity Consumption Analytics Dashboard
         </p>
-
-        <div class="live-status">
-
-            <div class="dot"></div>
-
-            Live Monitoring Active
-
-        </div>
 
     </div>
 
     <div class="upload-box">
 
-        <div class="upload-icon">
-            ⚡
-        </div>
-
         <h2>Upload Electricity Dataset</h2>
 
-        <p style="margin-top:10px;color:#94a3b8;">
-            Analyze Electricity Usage with AI Intelligence
-        </p>
+        <input type="file" id="fileInput" accept=".csv">
+
+        <br>
 
         <input
-            type="file"
-            id="fileInput"
-            accept=".csv"
+            type="text"
+            id="consumerId"
+            placeholder="Enter Bill Number / Consumer ID"
         >
-
-        <div class="bill-search">
-
-            <input
-                type="text"
-                id="billNumber"
-                placeholder="Enter Bill Number / Consumer ID"
-            >
-
-        </div>
 
         <br>
 
         <button onclick="analyzeDataset()">
-            Analyze Electricity Data
+            Analyze Dataset
         </button>
 
         <div class="loader" id="loader"></div>
@@ -351,25 +235,15 @@ button:hover{
 
     </div>
 
-    <div class="charts">
+    <div class="chart-box">
 
-        <div class="chart-box">
-
-            <canvas id="barChart"></canvas>
-
-        </div>
-
-        <div class="chart-box">
-
-            <canvas id="donutChart"></canvas>
-
-        </div>
+        <canvas id="usageChart"></canvas>
 
     </div>
 
     <div class="footer">
 
-        Smart Electricity Intelligence Platform © 2026
+        Smart Electricity Monitoring Platform © 2026
 
     </div>
 
@@ -377,35 +251,7 @@ button:hover{
 
 <script>
 
-let barChart;
-let donutChart;
-
-function animateValue(id,start,end,duration){
-
-    let range = end - start;
-
-    let current = start;
-
-    let increment = end > start ? 1 : -1;
-
-    let stepTime =
-        Math.abs(Math.floor(duration / range));
-
-    let obj = document.getElementById(id);
-
-    let timer = setInterval(function(){
-
-        current += increment;
-
-        obj.innerHTML = current;
-
-        if(current == end){
-
-            clearInterval(timer);
-        }
-
-    },stepTime);
-}
+let chart;
 
 async function analyzeDataset(){
 
@@ -418,8 +264,8 @@ async function analyzeDataset(){
     const loader =
         document.getElementById("loader");
 
-    const billNumber =
-        document.getElementById("billNumber").value;
+    const consumerId =
+        document.getElementById("consumerId").value;
 
     if(fileInput.files.length === 0){
 
@@ -432,7 +278,7 @@ async function analyzeDataset(){
     loader.style.display = "block";
 
     resultBox.innerHTML =
-        "AI analyzing electricity usage...";
+        "Analyzing electricity usage...";
 
     const formData = new FormData();
 
@@ -442,8 +288,8 @@ async function analyzeDataset(){
     );
 
     formData.append(
-        "bill_number",
-        billNumber
+        "consumer_id",
+        consumerId
     );
 
     try{
@@ -484,13 +330,8 @@ async function analyzeDataset(){
                     </div>
 
                     <div class="card">
-                        <h3>Peak Usage</h3>
+                        <h3>Maximum Usage</h3>
                         <p>${data.maximum}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Efficiency Score</h3>
-                        <p>${data.score}%</p>
                     </div>
 
                     <div class="card">
@@ -498,13 +339,16 @@ async function analyzeDataset(){
                         <p>₹${data.bill}</p>
                     </div>
 
+                    <div class="card">
+                        <h3>Efficiency Score</h3>
+                        <p>${data.score}%</p>
+                    </div>
+
                 </div>
 
                 <div class="info-box">
 
-                    <h2>
-                        AI Recommendation
-                    </h2>
+                    <h2>AI Recommendation</h2>
 
                     <p style="margin-top:15px;color:#cbd5e1;">
                         ${data.recommendation}
@@ -514,9 +358,7 @@ async function analyzeDataset(){
 
                 <div class="info-box">
 
-                    <h2>
-                        Smart AI Insights
-                    </h2>
+                    <h2>Smart Insights</h2>
 
                     <p style="margin-top:15px;color:#cbd5e1;">
                         ${data.insight}
@@ -524,33 +366,19 @@ async function analyzeDataset(){
 
                 </div>
 
-                <div class="info-box">
-
-                    <h2>
-                        Carbon Footprint
-                    </h2>
-
-                    <p style="margin-top:15px;color:#cbd5e1;">
-                        Estimated CO₂ Emission:
-                        ${data.carbon} kg
-                    </p>
-
-                </div>
-
             `;
 
-            createBarChart(
+            createChart(
                 data.average,
                 data.maximum,
                 data.minimum
             );
+        }
 
-            createDonutChart(
-                data.average,
-                data.maximum,
-                data.minimum
-            );
+        else{
 
+            resultBox.innerHTML =
+                data.error;
         }
 
     }
@@ -564,16 +392,16 @@ async function analyzeDataset(){
     }
 }
 
-function createBarChart(avg,max,min){
+function createChart(avg,max,min){
 
     const ctx =
-        document.getElementById("barChart");
+        document.getElementById("usageChart");
 
-    if(barChart){
-        barChart.destroy();
+    if(chart){
+        chart.destroy();
     }
 
-    barChart = new Chart(ctx,{
+    chart = new Chart(ctx,{
 
         type:'bar',
 
@@ -596,12 +424,12 @@ function createBarChart(avg,max,min){
                 ],
 
                 backgroundColor:[
-                    '#3b82f6',
+                    '#2563eb',
                     '#06b6d4',
                     '#10b981'
                 ],
 
-                borderRadius:15
+                borderRadius:12
 
             }]
         },
@@ -609,10 +437,6 @@ function createBarChart(avg,max,min){
         options:{
 
             responsive:true,
-
-            animation:{
-                duration:2500
-            },
 
             plugins:{
 
@@ -641,69 +465,9 @@ function createBarChart(avg,max,min){
     });
 }
 
-function createDonutChart(avg,max,min){
-
-    const ctx =
-        document.getElementById("donutChart");
-
-    if(donutChart){
-        donutChart.destroy();
-    }
-
-    donutChart = new Chart(ctx,{
-
-        type:'doughnut',
-
-        data:{
-
-            labels:[
-                'Average',
-                'Maximum',
-                'Minimum'
-            ],
-
-            datasets:[{
-
-                data:[
-                    avg,
-                    max,
-                    min
-                ],
-
-                backgroundColor:[
-                    '#2563eb',
-                    '#06b6d4',
-                    '#10b981'
-                ]
-
-            }]
-        },
-
-        options:{
-
-            responsive:true,
-
-            animation:{
-                animateRotate:true,
-                duration:2500
-            },
-
-            plugins:{
-
-                legend:{
-                    labels:{
-                        color:'white'
-                    }
-                }
-            }
-        }
-    });
-}
-
 </script>
 
 </body>
-
 </html>
 
 """
@@ -729,51 +493,47 @@ def analyze():
 
         file = request.files["file"]
 
-        consumer =
-            request.form.get(
-                "bill_number",
-                "N/A"
-            )
+        consumer = request.form.get(
+            "consumer_id",
+            "N/A"
+        )
 
         df = pd.read_csv(file)
 
-        numeric_columns =
-            df.select_dtypes(include="number")
+        numeric_columns = df.select_dtypes(include="number")
 
-        usage_column =
-            numeric_columns.columns[-1]
+        if numeric_columns.empty:
 
-        usage_data =
-            numeric_columns[usage_column]
+            return jsonify({
 
-        average =
-            round(float(usage_data.mean()),2)
+                "success": False,
+                "error": "Dataset has no numeric columns"
 
-        maximum =
-            round(float(usage_data.max()),2)
+            })
 
-        minimum =
-            round(float(usage_data.min()),2)
+        usage_column = numeric_columns.columns[-1]
 
-        total =
-            round(float(usage_data.sum()),2)
+        usage_data = numeric_columns[usage_column]
 
-        bill =
-            round(total * 8.5,2)
+        average = round(float(usage_data.mean()), 2)
 
-        carbon =
-            round(total * 0.42,2)
+        maximum = round(float(usage_data.max()), 2)
+
+        minimum = round(float(usage_data.min()), 2)
+
+        total = round(float(usage_data.sum()), 2)
+
+        bill = round(total * 8.5, 2)
 
         if average > 500:
 
             recommendation = (
                 "High electricity usage detected. "
-                "Reduce appliance usage during peak hours."
+                "Reduce heavy appliance usage during peak hours."
             )
 
             insight = (
-                "Peak electricity spikes observed "
-                "during high-demand periods."
+                "AI detected unusually high power consumption patterns."
             )
 
             score = 45
@@ -781,13 +541,12 @@ def analyze():
         elif average > 250:
 
             recommendation = (
-                "Moderate usage detected. "
-                "Using efficient appliances can reduce bills."
+                "Moderate electricity usage detected. "
+                "Energy optimization is recommended."
             )
 
             insight = (
-                "Energy usage is stable but optimization "
-                "can improve efficiency."
+                "Usage is stable but can be optimized further."
             )
 
             score = 72
@@ -795,11 +554,11 @@ def analyze():
         else:
 
             recommendation = (
-                "Electricity usage is optimized."
+                "Electricity usage is optimized and efficient."
             )
 
             insight = (
-                "Power consumption is balanced and efficient."
+                "Consumption patterns are balanced and eco-friendly."
             )
 
             score = 92
@@ -819,8 +578,6 @@ def analyze():
             "total": total,
 
             "bill": bill,
-
-            "carbon": carbon,
 
             "score": score,
 
@@ -850,13 +607,9 @@ def health():
 
 if __name__ == "__main__":
 
-    port =
-        int(os.environ.get("PORT",5000))
+    port = int(os.environ.get("PORT", 5000))
 
     app.run(
-
         host="0.0.0.0",
-
         port=port
-
     )
