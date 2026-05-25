@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
-from PIL import Image
+import pandas as pd
 import os
-import re
 from datetime import datetime
 
 app = Flask(__name__)
@@ -9,51 +8,214 @@ app = Flask(__name__)
 HTML_PAGE = """
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>Electricity Bill Analyzer</title>
-
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Electricity Analytics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 
-body{
-    background:#0f172a;
-    color:white;
-    font-family:Arial;
+*{
     margin:0;
-    padding:20px;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+body{
+    background:#020617;
+    color:white;
+    overflow-x:hidden;
+}
+
+.background{
+    position:fixed;
+    width:100%;
+    height:100%;
+    background:linear-gradient(-45deg,#020617,#0f172a,#1e293b,#0f172a);
+    background-size:400% 400%;
+    animation:bgMove 15s ease infinite;
+    z-index:-1;
+}
+
+@keyframes bgMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
 }
 
 .container{
-    max-width:900px;
+    width:95%;
+    max-width:1200px;
     margin:auto;
+    padding:40px 20px;
 }
 
-.box{
-    background:#1e293b;
-    padding:30px;
-    border-radius:15px;
+.title{
+    text-align:center;
+    margin-bottom:40px;
+    animation:fadeIn 1s ease;
+}
+
+.title h1{
+    font-size:48px;
+    font-weight:700;
+}
+
+.title p{
+    color:#94a3b8;
+    margin-top:10px;
+    font-size:18px;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.upload-box{
+    background:rgba(15,23,42,0.9);
+    border:2px dashed #334155;
+    border-radius:25px;
+    padding:50px;
+    text-align:center;
+    transition:0.4s;
+    backdrop-filter:blur(10px);
+}
+
+.upload-box:hover{
+    transform:scale(1.01);
+    border-color:#3b82f6;
+}
+
+.file-input{
     margin-top:20px;
+    color:white;
 }
 
 button{
-    padding:12px 25px;
+    margin-top:25px;
+    padding:15px 45px;
     border:none;
-    border-radius:10px;
-    background:#2563eb;
+    border-radius:50px;
+    background:linear-gradient(135deg,#2563eb,#06b6d4);
     color:white;
+    font-size:18px;
+    font-weight:600;
     cursor:pointer;
-    margin-top:15px;
+    transition:0.4s;
+}
+
+button:hover{
+    transform:translateY(-5px);
+    box-shadow:0 10px 25px rgba(37,99,235,0.4);
+}
+
+.loader{
+    width:60px;
+    height:60px;
+    border:5px solid rgba(255,255,255,0.1);
+    border-top:5px solid #38bdf8;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:30px auto;
+    display:none;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+.result-box{
+    margin-top:40px;
+    background:rgba(15,23,42,0.95);
+    border-radius:25px;
+    padding:35px;
+    animation:fadeIn 1s ease;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-top:30px;
 }
 
 .card{
-    background:#334155;
-    padding:20px;
-    border-radius:15px;
-    margin-top:15px;
+    background:#1e293b;
+    padding:25px;
+    border-radius:20px;
+    transition:0.4s;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+    background:#243041;
+}
+
+.card h3{
+    color:#93c5fd;
+    margin-bottom:12px;
+    font-size:17px;
+}
+
+.card p{
+    font-size:30px;
+    font-weight:700;
+}
+
+.chart-container{
+    margin-top:40px;
+    background:#111827;
+    border-radius:25px;
+    padding:25px;
+}
+
+.footer{
+    text-align:center;
+    margin-top:40px;
+    color:#64748b;
+    font-size:14px;
+}
+
+.progress-bar{
+    width:100%;
+    background:#1e293b;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:20px;
+}
+
+.progress{
+    width:0%;
+    height:18px;
+    background:linear-gradient(90deg,#2563eb,#06b6d4);
+    animation:load 2s forwards;
+}
+
+@keyframes load{
+    from{
+        width:0%;
+    }
+    to{
+        width:100%;
+    }
 }
 
 </style>
@@ -62,25 +224,54 @@ button{
 
 <body>
 
+<div class="background"></div>
+
 <div class="container">
 
-    <h1>Electricity Bill Analyzer</h1>
+    <div class="title">
 
-    <div class="box">
+        <h1>⚡ Smart Electricity Analytics</h1>
 
-        <input type="file" id="imageInput">
-
-        <br>
-
-        <button onclick="uploadImage()">
-            Analyze Bill
-        </button>
+        <p>Upload Electricity Dataset and Analyze Energy Usage with AI</p>
 
     </div>
 
-    <div class="box" id="result">
+    <div class="upload-box">
 
-        Waiting for upload...
+        <h2>Upload CSV Dataset</h2>
+
+        <input
+            type="file"
+            id="fileInput"
+            class="file-input"
+            accept=".csv"
+        >
+
+        <br>
+
+        <button onclick="analyzeDataset()">
+            Analyze Dataset
+        </button>
+
+        <div class="loader" id="loader"></div>
+
+    </div>
+
+    <div class="result-box" id="resultBox">
+
+        Waiting for dataset upload...
+
+    </div>
+
+    <div class="chart-container">
+
+        <canvas id="usageChart"></canvas>
+
+    </div>
+
+    <div class="footer">
+
+        AI Powered Electricity Monitoring Dashboard
 
     </div>
 
@@ -88,29 +279,36 @@ button{
 
 <script>
 
-async function uploadImage(){
+let chart;
+
+async function analyzeDataset(){
 
     const fileInput =
-        document.getElementById("imageInput");
+        document.getElementById("fileInput");
 
-    const result =
-        document.getElementById("result");
+    const resultBox =
+        document.getElementById("resultBox");
+
+    const loader =
+        document.getElementById("loader");
 
     if(fileInput.files.length === 0){
 
-        result.innerHTML =
-            "Please upload image";
+        resultBox.innerHTML =
+            "Please upload CSV dataset.";
 
         return;
     }
 
-    result.innerHTML =
-        "Analyzing...";
+    loader.style.display = "block";
+
+    resultBox.innerHTML =
+        "Analyzing dataset using AI...";
 
     const formData = new FormData();
 
     formData.append(
-        "image",
+        "file",
         fileInput.files[0]
     );
 
@@ -125,49 +323,177 @@ async function uploadImage(){
 
         });
 
-        const data = await response.json();
+        const data =
+            await response.json();
+
+        loader.style.display = "none";
 
         if(data.success){
 
-            result.innerHTML = `
+            resultBox.innerHTML = `
 
-                <div class="card">
+                <h2>Dataset Analysis Completed</h2>
 
-                    <h2>Analysis Completed</h2>
+                <div class="progress-bar">
+                    <div class="progress"></div>
+                </div>
 
-                    <p><b>Units:</b>
-                    ${data.units} kWh</p>
+                <div class="grid">
 
-                    <p><b>Amount:</b>
-                    ₹${data.amount}</p>
+                    <div class="card">
+                        <h3>Total Rows</h3>
+                        <p>${data.rows}</p>
+                    </div>
 
-                    <p><b>Status:</b>
-                    ${data.status}</p>
+                    <div class="card">
+                        <h3>Total Columns</h3>
+                        <p>${data.columns}</p>
+                    </div>
 
-                    <p><b>Recommendation:</b>
-                    ${data.recommendation}</p>
+                    <div class="card">
+                        <h3>Average Units</h3>
+                        <p>${data.average}</p>
+                    </div>
 
-                    <p><b>Date:</b>
-                    ${data.date}</p>
+                    <div class="card">
+                        <h3>Maximum Usage</h3>
+                        <p>${data.maximum}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Minimum Usage</h3>
+                        <p>${data.minimum}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Total Usage</h3>
+                        <p>${data.total}</p>
+                    </div>
 
                 </div>
 
+                <br>
+
+                <h3>AI Recommendation</h3>
+
+                <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
+                    ${data.recommendation}
+                </p>
+
+                <br>
+
+                <h3>Usage Efficiency</h3>
+
+                <p style="margin-top:15px;color:#cbd5e1;">
+                    ${data.efficiency}
+                </p>
+
+                <br>
+
+                <h3>Peak Consumption Alert</h3>
+
+                <p style="margin-top:15px;color:#fca5a5;">
+                    ${data.alert}
+                </p>
+
             `;
+
+            createChart(
+                data.average,
+                data.maximum,
+                data.minimum
+            );
+
         }
 
         else{
 
-            result.innerHTML =
-                data.error;
+            resultBox.innerHTML =
+                "Error: " + data.error;
         }
 
     }
 
     catch(error){
 
-        result.innerHTML =
+        loader.style.display = "none";
+
+        resultBox.innerHTML =
             "Server Error";
     }
+}
+
+function createChart(avg,max,min){
+
+    const ctx =
+        document.getElementById("usageChart");
+
+    if(chart){
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx,{
+
+        type:'bar',
+
+        data:{
+
+            labels:[
+                'Average',
+                'Maximum',
+                'Minimum'
+            ],
+
+            datasets:[{
+
+                label:'Electricity Usage',
+
+                data:[
+                    avg,
+                    max,
+                    min
+                ],
+
+                backgroundColor:[
+                    '#3b82f6',
+                    '#06b6d4',
+                    '#10b981'
+                ],
+
+                borderRadius:10
+
+            }]
+        },
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+
+                legend:{
+                    labels:{
+                        color:'white'
+                    }
+                }
+            },
+
+            scales:{
+
+                y:{
+                    ticks:{
+                        color:'white'
+                    }
+                },
+
+                x:{
+                    ticks:{
+                        color:'white'
+                    }
+                }
+            }
+        }
+    });
 }
 
 </script>
@@ -188,68 +514,95 @@ def analyze():
 
     try:
 
-        if "image" not in request.files:
+        if "file" not in request.files:
 
             return jsonify({
 
                 "success": False,
-                "error": "No image uploaded"
+                "error": "No file uploaded"
 
             })
 
-        file = request.files["image"]
+        file = request.files["file"]
 
-        image = Image.open(file)
+        df = pd.read_csv(file)
 
-        width, height = image.size
+        numeric_columns = df.select_dtypes(include="number")
 
-        # ============================================
-        # LIGHTWEIGHT ANALYSIS
-        # ============================================
+        if numeric_columns.empty:
 
-        estimated_units = int((width + height) / 10)
+            return jsonify({
 
-        estimated_amount = estimated_units * 8
+                "success": False,
+                "error": "Dataset must contain numeric columns"
 
-        # ============================================
-        # USAGE STATUS
-        # ============================================
+            })
 
-        if estimated_units > 400:
+        usage_column = numeric_columns.columns[-1]
 
-            status = "High Usage"
+        usage_data = numeric_columns[usage_column]
+
+        average = round(float(usage_data.mean()), 2)
+
+        maximum = round(float(usage_data.max()), 2)
+
+        minimum = round(float(usage_data.min()), 2)
+
+        total = round(float(usage_data.sum()), 2)
+
+        if average > 500:
 
             recommendation = (
-                "Reduce AC and heavy appliance usage."
+                "High electricity usage detected. "
+                "Reduce heavy appliance usage during peak hours."
             )
 
-        elif estimated_units > 200:
+            efficiency = "Low Efficiency"
 
-            status = "Moderate Usage"
+            alert = "Peak energy consumption is very high."
+
+        elif average > 250:
 
             recommendation = (
-                "Switch to LED bulbs and save power."
+                "Moderate electricity usage detected. "
+                "Using LED appliances can improve efficiency."
             )
+
+            efficiency = "Moderate Efficiency"
+
+            alert = "Energy consumption is moderately high."
 
         else:
 
-            status = "Low Usage"
-
             recommendation = (
-                "Electricity usage is optimized."
+                "Electricity usage is optimized and balanced."
             )
+
+            efficiency = "High Efficiency"
+
+            alert = "No abnormal electricity spike detected."
 
         return jsonify({
 
             "success": True,
 
-            "units": estimated_units,
+            "rows": int(df.shape[0]),
 
-            "amount": estimated_amount,
+            "columns": int(df.shape[1]),
 
-            "status": status,
+            "average": average,
+
+            "maximum": maximum,
+
+            "minimum": minimum,
+
+            "total": total,
 
             "recommendation": recommendation,
+
+            "efficiency": efficiency,
+
+            "alert": alert,
 
             "date": str(datetime.now().date())
 
@@ -260,7 +613,6 @@ def analyze():
         return jsonify({
 
             "success": False,
-
             "error": str(e)
 
         })
