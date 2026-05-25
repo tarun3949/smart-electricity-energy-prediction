@@ -1,5 +1,10 @@
-flask
-gunicorn
-numpy
-pandas
-scikit-learn
+Flask==3.0.3
+Flask-SocketIO==5.3.6
+gunicorn==23.0.0
+eventlet==0.36.1
+numpy==2.3.1
+pandas==2.3.1
+scikit-learn==1.7.1
+opencv-python-headless==4.10.0.84
+pytesseract==0.3.13
+Pillow==11.3.0
