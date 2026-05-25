@@ -4,6 +4,12 @@ import os
 
 app = Flask(__name__)
 
+# ================================
+# FRONTEND UI UPGRADE ONLY
+# BACKEND NOT CHANGED
+# REPLACE ONLY HTML_PAGE
+# ================================
+
 HTML_PAGE = """
 
 <!DOCTYPE html>
@@ -12,9 +18,13 @@ HTML_PAGE = """
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Smart Electricity Intelligence</title>
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+Smart Electricity Intelligence
+</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -31,158 +41,563 @@ HTML_PAGE = """
 
 body{
     background:#020617;
-    color:white;
     overflow-x:hidden;
+    color:white;
+    min-height:100vh;
 }
+
+/* =======================================
+THUNDER BACKGROUND
+======================================= */
 
 .background{
     position:fixed;
     width:100%;
     height:100%;
+    overflow:hidden;
+    z-index:-3;
     background:
-    radial-gradient(circle at top left,#1d4ed8,transparent 30%),
-    radial-gradient(circle at bottom right,#06b6d4,transparent 30%),
-    #020617;
-    z-index:-1;
+    linear-gradient(
+        135deg,
+        #020617,
+        #0f172a,
+        #111827,
+        #020617
+    );
+    background-size:400% 400%;
+    animation:bgMove 15s ease infinite;
 }
+
+@keyframes bgMove{
+
+    0%{
+        background-position:0% 50%;
+    }
+
+    50%{
+        background-position:100% 50%;
+    }
+
+    100%{
+        background-position:0% 50%;
+    }
+}
+
+/* =======================================
+THUNDER EFFECT
+======================================= */
+
+.thunder{
+
+    position:fixed;
+    width:4px;
+    height:200px;
+    background:white;
+    top:-200px;
+    opacity:0;
+    box-shadow:
+    0 0 25px white,
+    0 0 50px #38bdf8,
+    0 0 80px #60a5fa;
+
+    animation:lightning 6s linear infinite;
+}
+
+.thunder:nth-child(1){
+    left:15%;
+    animation-delay:1s;
+}
+
+.thunder:nth-child(2){
+    left:45%;
+    animation-delay:3s;
+}
+
+.thunder:nth-child(3){
+    left:75%;
+    animation-delay:5s;
+}
+
+@keyframes lightning{
+
+    0%{
+        opacity:0;
+        top:-200px;
+    }
+
+    5%{
+        opacity:1;
+    }
+
+    10%{
+        opacity:0;
+        top:100%;
+    }
+
+    100%{
+        opacity:0;
+    }
+}
+
+/* =======================================
+MAIN CONTAINER
+======================================= */
 
 .container{
     width:95%;
-    max-width:1400px;
+    max-width:1450px;
     margin:auto;
     padding:40px 20px;
 }
 
+/* =======================================
+HEADER
+======================================= */
+
 .header{
     text-align:center;
+    animation:fadeIn 1s ease;
 }
 
 .header h1{
-    font-size:55px;
-    background:linear-gradient(90deg,#60a5fa,#06b6d4,#34d399);
+
+    font-size:62px;
+    font-weight:700;
+
+    background:
+    linear-gradient(
+        90deg,
+        #60a5fa,
+        #06b6d4,
+        #34d399
+    );
+
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 }
 
 .header p{
-    margin-top:10px;
+
+    margin-top:12px;
     color:#94a3b8;
+    font-size:19px;
 }
 
-.upload-box{
-    margin-top:40px;
-    background:#0f172a;
-    border-radius:25px;
-    padding:40px;
-    text-align:center;
+.live-box{
+
+    margin-top:25px;
+
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+
+    padding:12px 24px;
+
+    border-radius:50px;
+
+    background:rgba(15,23,42,0.7);
+
     border:1px solid rgba(255,255,255,0.08);
-    transition:0.4s;
+
+    backdrop-filter:blur(10px);
+}
+
+.live-dot{
+
+    width:12px;
+    height:12px;
+
+    border-radius:50%;
+
+    background:#22c55e;
+
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+
+    0%{
+        opacity:1;
+    }
+
+    50%{
+        opacity:0.3;
+    }
+
+    100%{
+        opacity:1;
+    }
+}
+
+/* =======================================
+UPLOAD BOX
+======================================= */
+
+.upload-box{
+
+    margin-top:45px;
+
+    background:
+    rgba(15,23,42,0.85);
+
+    border-radius:30px;
+
+    padding:50px;
+
+    text-align:center;
+
+    border:1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter:blur(18px);
+
+    box-shadow:
+    0 10px 40px rgba(0,0,0,0.4);
+
+    transition:0.5s;
 }
 
 .upload-box:hover{
-    transform:translateY(-5px);
+
+    transform:translateY(-8px);
+
+    box-shadow:
+    0 15px 60px rgba(59,130,246,0.25);
+}
+
+.upload-icon{
+
+    font-size:90px;
+
+    animation:float 3s ease infinite;
+}
+
+@keyframes float{
+
+    0%{
+        transform:translateY(0px);
+    }
+
+    50%{
+        transform:translateY(-15px);
+    }
+
+    100%{
+        transform:translateY(0px);
+    }
+}
+
+.upload-box h2{
+
+    margin-top:10px;
+    font-size:34px;
+}
+
+.upload-box p{
+
+    margin-top:12px;
+    color:#94a3b8;
 }
 
 input[type=file]{
-    margin-top:20px;
+
+    margin-top:30px;
+
+    background:#1e293b;
+
+    padding:14px;
+
+    border-radius:15px;
+
     color:white;
 }
 
 input[type=text]{
-    width:320px;
-    margin-top:20px;
-    padding:15px;
+
+    width:350px;
+
+    margin-top:25px;
+
+    padding:16px;
+
     border:none;
+
     border-radius:50px;
+
     background:#1e293b;
+
     color:white;
+
     outline:none;
+
+    font-size:16px;
 }
 
 button{
-    margin-top:25px;
-    padding:15px 40px;
+
+    margin-top:30px;
+
+    padding:16px 45px;
+
     border:none;
+
     border-radius:50px;
-    background:linear-gradient(135deg,#2563eb,#06b6d4);
+
+    background:
+    linear-gradient(
+        135deg,
+        #2563eb,
+        #06b6d4
+    );
+
     color:white;
-    font-size:16px;
-    cursor:pointer;
+
+    font-size:17px;
+
     font-weight:600;
+
+    cursor:pointer;
+
     transition:0.4s;
 }
 
 button:hover{
-    transform:scale(1.05);
+
+    transform:
+    translateY(-5px)
+    scale(1.03);
+
+    box-shadow:
+    0 10px 35px rgba(37,99,235,0.5);
 }
 
+/* =======================================
+LOADER
+======================================= */
+
 .loader{
-    width:60px;
-    height:60px;
-    border:6px solid rgba(255,255,255,0.1);
-    border-top:6px solid #38bdf8;
+
+    width:75px;
+    height:75px;
+
     border-radius:50%;
-    animation:spin 1s linear infinite;
-    margin:25px auto;
+
+    border:7px solid rgba(255,255,255,0.08);
+
+    border-top:7px solid #38bdf8;
+
+    margin:35px auto;
+
     display:none;
+
+    animation:spin 1s linear infinite;
 }
 
 @keyframes spin{
+
     100%{
         transform:rotate(360deg);
     }
 }
 
+/* =======================================
+DASHBOARD
+======================================= */
+
 .dashboard{
-    margin-top:40px;
+    margin-top:45px;
 }
 
 .grid{
+
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(240px,1fr));
+
     gap:25px;
 }
 
 .card{
-    background:#111827;
-    padding:30px;
-    border-radius:25px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:
+    rgba(17,24,39,0.9);
+
+    padding:32px;
+
+    border-radius:28px;
+
+    border:1px solid rgba(255,255,255,0.06);
+
     transition:0.4s;
 }
 
 .card:hover{
-    transform:translateY(-8px);
+
+    transform:translateY(-10px);
+}
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:180%;
+    height:180%;
+
+    background:
+    linear-gradient(
+        45deg,
+        transparent,
+        rgba(255,255,255,0.08),
+        transparent
+    );
+
+    top:-120%;
+    left:-120%;
+
+    transition:1s;
+}
+
+.card:hover::before{
+
+    top:120%;
+    left:120%;
 }
 
 .card h3{
+
     color:#93c5fd;
+
     margin-bottom:15px;
+
+    font-size:17px;
 }
 
 .card p{
-    font-size:32px;
+
+    font-size:34px;
+
     font-weight:700;
 }
 
+/* =======================================
+CHARTS
+======================================= */
+
 .chart-box{
+
     margin-top:40px;
+
     background:#111827;
-    border-radius:25px;
-    padding:30px;
+
+    border-radius:28px;
+
+    padding:35px;
 }
+
+/* =======================================
+INSIGHT BOX
+======================================= */
 
 .info-box{
-    margin-top:30px;
+
+    margin-top:35px;
+
     background:#111827;
-    border-radius:25px;
-    padding:30px;
-    line-height:1.8;
+
+    border-radius:28px;
+
+    padding:35px;
+
+    line-height:1.9;
 }
 
-.footer{
-    text-align:center;
+.info-box h2{
+
+    color:#60a5fa;
+}
+
+/* =======================================
+FEATURE BOXES
+======================================= */
+
+.feature-grid{
+
     margin-top:40px;
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(280px,1fr));
+
+    gap:25px;
+}
+
+.feature-card{
+
+    background:
+    linear-gradient(
+        135deg,
+        #111827,
+        #1e293b
+    );
+
+    border-radius:25px;
+
+    padding:30px;
+
+    transition:0.4s;
+}
+
+.feature-card:hover{
+
+    transform:
+    scale(1.03)
+    translateY(-6px);
+}
+
+.feature-card h3{
+
+    color:#38bdf8;
+
+    margin-bottom:15px;
+}
+
+/* =======================================
+FOOTER
+======================================= */
+
+.footer{
+
+    text-align:center;
+
+    margin-top:50px;
+
     color:#64748b;
+
+    font-size:14px;
+}
+
+/* =======================================
+ANIMATION
+======================================= */
+
+@keyframes fadeIn{
+
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 
 </style>
@@ -193,23 +608,51 @@ button:hover{
 
 <div class="background"></div>
 
+<div class="thunder"></div>
+<div class="thunder"></div>
+<div class="thunder"></div>
+
 <div class="container">
 
     <div class="header">
 
-        <h1>Smart Electricity Intelligence</h1>
+        <h1>
+            ⚡ Smart Electricity Intelligence
+        </h1>
 
         <p>
-            AI Powered Electricity Consumption Analytics Dashboard
+            AI Powered Electricity Analytics Dashboard
         </p>
+
+        <div class="live-box">
+
+            <div class="live-dot"></div>
+
+            Live AI Monitoring Active
+
+        </div>
 
     </div>
 
     <div class="upload-box">
 
-        <h2>Upload Electricity Dataset</h2>
+        <div class="upload-icon">
+            ⚡
+        </div>
 
-        <input type="file" id="fileInput" accept=".csv">
+        <h2>
+            Upload Electricity Dataset
+        </h2>
+
+        <p>
+            Analyze electricity consumption with AI
+        </p>
+
+        <input
+            type="file"
+            id="fileInput"
+            accept=".csv"
+        >
 
         <br>
 
@@ -241,237 +684,59 @@ button:hover{
 
     </div>
 
+    <div class="feature-grid">
+
+        <div class="feature-card">
+
+            <h3>
+                Smart AI Detection
+            </h3>
+
+            <p>
+                Automatically detects unusual electricity patterns.
+            </p>
+
+        </div>
+
+        <div class="feature-card">
+
+            <h3>
+                Carbon Footprint Tracking
+            </h3>
+
+            <p>
+                Calculates environmental impact from electricity usage.
+            </p>
+
+        </div>
+
+        <div class="feature-card">
+
+            <h3>
+                Real Time Monitoring
+            </h3>
+
+            <p>
+                Dynamic dashboard with live analytics visualization.
+            </p>
+
+        </div>
+
+    </div>
+
     <div class="footer">
 
-        Smart Electricity Monitoring Platform © 2026
+        Smart Electricity Intelligence Platform © 2026
 
     </div>
 
 </div>
 
-<script>
-
-let chart;
-
-async function analyzeDataset(){
-
-    const fileInput =
-        document.getElementById("fileInput");
-
-    const resultBox =
-        document.getElementById("resultBox");
-
-    const loader =
-        document.getElementById("loader");
-
-    const consumerId =
-        document.getElementById("consumerId").value;
-
-    if(fileInput.files.length === 0){
-
-        resultBox.innerHTML =
-            "Please upload CSV dataset.";
-
-        return;
-    }
-
-    loader.style.display = "block";
-
-    resultBox.innerHTML =
-        "Analyzing electricity usage...";
-
-    const formData = new FormData();
-
-    formData.append(
-        "file",
-        fileInput.files[0]
-    );
-
-    formData.append(
-        "consumer_id",
-        consumerId
-    );
-
-    try{
-
-        const response =
-            await fetch("/analyze",{
-
-            method:"POST",
-
-            body:formData
-
-        });
-
-        const data =
-            await response.json();
-
-        loader.style.display = "none";
-
-        if(data.success){
-
-            resultBox.innerHTML = `
-
-                <div class="grid">
-
-                    <div class="card">
-                        <h3>Consumer ID</h3>
-                        <p>${data.consumer}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Total Units</h3>
-                        <p>${data.total}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Average Usage</h3>
-                        <p>${data.average}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Maximum Usage</h3>
-                        <p>${data.maximum}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Estimated Bill</h3>
-                        <p>₹${data.bill}</p>
-                    </div>
-
-                    <div class="card">
-                        <h3>Efficiency Score</h3>
-                        <p>${data.score}%</p>
-                    </div>
-
-                </div>
-
-                <div class="info-box">
-
-                    <h2>AI Recommendation</h2>
-
-                    <p style="margin-top:15px;color:#cbd5e1;">
-                        ${data.recommendation}
-                    </p>
-
-                </div>
-
-                <div class="info-box">
-
-                    <h2>Smart Insights</h2>
-
-                    <p style="margin-top:15px;color:#cbd5e1;">
-                        ${data.insight}
-                    </p>
-
-                </div>
-
-            `;
-
-            createChart(
-                data.average,
-                data.maximum,
-                data.minimum
-            );
-        }
-
-        else{
-
-            resultBox.innerHTML =
-                data.error;
-        }
-
-    }
-
-    catch(error){
-
-        loader.style.display = "none";
-
-        resultBox.innerHTML =
-            "Server Error";
-    }
-}
-
-function createChart(avg,max,min){
-
-    const ctx =
-        document.getElementById("usageChart");
-
-    if(chart){
-        chart.destroy();
-    }
-
-    chart = new Chart(ctx,{
-
-        type:'bar',
-
-        data:{
-
-            labels:[
-                'Average',
-                'Maximum',
-                'Minimum'
-            ],
-
-            datasets:[{
-
-                label:'Electricity Usage',
-
-                data:[
-                    avg,
-                    max,
-                    min
-                ],
-
-                backgroundColor:[
-                    '#2563eb',
-                    '#06b6d4',
-                    '#10b981'
-                ],
-
-                borderRadius:12
-
-            }]
-        },
-
-        options:{
-
-            responsive:true,
-
-            plugins:{
-
-                legend:{
-                    labels:{
-                        color:'white'
-                    }
-                }
-            },
-
-            scales:{
-
-                y:{
-                    ticks:{
-                        color:'white'
-                    }
-                },
-
-                x:{
-                    ticks:{
-                        color:'white'
-                    }
-                }
-            }
-        }
-    });
-}
-
-</script>
-
 </body>
+
 </html>
 
 """
-
 @app.route("/")
 def home():
 
