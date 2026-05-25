@@ -1,24 +1,19 @@
-from flask import Flask, render_template_string, request, jsonify
-from flask_socketio import SocketIO
+from flask import Flask, request, jsonify, render_template_string
+import numpy as np
 import cv2
 import pytesseract
-import numpy as np
 import re
-import threading
-import random
-import time
 from datetime import datetime
+import os
 
-# =======================================================
+# =========================================================
 # FLASK APP
-# =======================================================
+# =========================================================
 
 app = Flask(__name__)
 
-socketio = SocketIO(app)
-
 # =========================================================
-# HTML UI
+# HTML PAGE
 # =========================================================
 
 HTML_PAGE = """
@@ -38,8 +33,6 @@ HTML_PAGE = """
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <style>
 
 *{
@@ -55,25 +48,9 @@ body{
     overflow-x:hidden;
 }
 
-.background{
-    position:fixed;
-    width:100%;
-    height:100%;
-    background:linear-gradient(-45deg,#020617,#0f172a,#1e293b,#0f172a);
-    background-size:400% 400%;
-    animation:bgMove 15s ease infinite;
-    z-index:-1;
-}
-
-@keyframes bgMove{
-    0%{background-position:0% 50%;}
-    50%{background-position:100% 50%;}
-    100%{background-position:0% 50%;}
-}
-
 .container{
     width:95%;
-    max-width:1300px;
+    max-width:1200px;
     margin:auto;
     padding:30px;
 }
@@ -92,22 +69,52 @@ body{
     margin-top:10px;
 }
 
+.upload-box{
+    background:#111827;
+    border-radius:20px;
+    padding:40px;
+    text-align:center;
+}
+
+input[type=file]{
+    margin-top:20px;
+    color:white;
+}
+
+button{
+    margin-top:25px;
+    padding:15px 40px;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(135deg,#2563eb,#06b6d4);
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+.result-box{
+    margin-top:30px;
+    background:#111827;
+    border-radius:20px;
+    padding:30px;
+}
+
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:20px;
+    margin-top:20px;
 }
 
 .card{
-    background:rgba(255,255,255,0.08);
-    border-radius:20px;
+    background:#1e293b;
     padding:25px;
-    backdrop-filter:blur(10px);
-    transition:0.3s;
-}
-
-.card:hover{
-    transform:translateY(-5px);
+    border-radius:20px;
 }
 
 .card h3{
@@ -120,44 +127,12 @@ body{
     font-weight:700;
 }
 
-.upload-section{
-    margin-top:30px;
-    background:rgba(255,255,255,0.08);
-    border-radius:20px;
-    padding:30px;
-    text-align:center;
-}
-
-input[type=file]{
-    margin-top:20px;
-    color:white;
-}
-
-button{
-    margin-top:20px;
-    padding:15px 40px;
-    border:none;
-    border-radius:50px;
-    background:linear-gradient(135deg,#2563eb,#06b6d4);
-    color:white;
-    font-size:16px;
-    font-weight:600;
-    cursor:pointer;
-}
-
-.result-box{
-    margin-top:30px;
-    background:rgba(255,255,255,0.08);
-    padding:30px;
-    border-radius:20px;
-}
-
 .chart-container{
     margin-top:40px;
 }
 
 canvas{
-    background:#0f172a;
+    background:#111827;
     border-radius:20px;
     padding:20px;
 }
@@ -168,18 +143,11 @@ canvas{
     color:#64748b;
 }
 
-.live{
-    color:#22c55e;
-    font-size:14px;
-}
-
 </style>
 
 </head>
 
 <body>
-
-<div class="background"></div>
 
 <div class="container">
 
@@ -187,48 +155,20 @@ canvas{
 
         <h1>AI Electricity Bill Analyzer</h1>
 
-        <p>Dynamic Smart Electricity Usage Detection System</p>
-
-        <div class="live">
-            LIVE ENERGY MONITOR ACTIVE
-        </div>
+        <p>Upload Electricity Bill Image and Get AI Analysis</p>
 
     </div>
 
-    <div class="grid">
+    <div class="upload-box">
 
-        <div class="card">
-            <h3>Live Voltage</h3>
-            <p id="voltage">0 V</p>
-        </div>
+        <h2>Upload Electricity Bill</h2>
 
-        <div class="card">
-            <h3>Live Usage</h3>
-            <p id="usage">0 kWh</p>
-        </div>
-
-        <div class="card">
-            <h3>Estimated Cost</h3>
-            <p id="cost">₹0</p>
-        </div>
-
-        <div class="card">
-            <h3>Current Status</h3>
-            <p id="status">Normal</p>
-        </div>
-
-    </div>
-
-    <div class="upload-section">
-
-        <h2>Upload Electricity Bill Image</h2>
-
-        <input type="file" id="billImage" accept="image/*">
+        <input type="file" id="imageInput" accept="image/*">
 
         <br>
 
         <button onclick="analyzeBill()">
-            Analyze Electricity Bill
+            Analyze Bill
         </button>
 
     </div>
@@ -247,7 +187,7 @@ canvas{
 
     <div class="footer">
 
-        AI Powered Dynamic Electricity Monitoring Platform
+        Smart Electricity Usage Monitoring Platform
 
     </div>
 
@@ -255,29 +195,12 @@ canvas{
 
 <script>
 
-const socket = io();
-
-socket.on("live_update", function(data){
-
-    document.getElementById("voltage").innerHTML =
-        data.voltage + " V";
-
-    document.getElementById("usage").innerHTML =
-        data.usage + " kWh";
-
-    document.getElementById("cost").innerHTML =
-        "₹" + data.cost;
-
-    document.getElementById("status").innerHTML =
-        data.status;
-});
-
 let chart;
 
 async function analyzeBill(){
 
     const fileInput =
-        document.getElementById("billImage");
+        document.getElementById("imageInput");
 
     const resultBox =
         document.getElementById("resultBox");
@@ -285,13 +208,13 @@ async function analyzeBill(){
     if(fileInput.files.length === 0){
 
         resultBox.innerHTML =
-            "Please upload an electricity bill image.";
+            "Please upload an image.";
 
         return;
     }
 
     resultBox.innerHTML =
-        "Analyzing electricity bill using AI OCR...";
+        "Analyzing electricity bill...";
 
     const formData = new FormData();
 
@@ -300,65 +223,75 @@ async function analyzeBill(){
         fileInput.files[0]
     );
 
-    const response = await fetch("/analyze-bill",{
+    try{
 
-        method:"POST",
+        const response =
+            await fetch("/analyze",{
 
-        body:formData
-    });
+            method:"POST",
 
-    const data = await response.json();
+            body:formData
 
-    if(data.success){
+        });
 
-        resultBox.innerHTML = `
+        const data = await response.json();
 
-            <h2>Bill Analysis Completed</h2>
+        if(data.success){
 
-            <br>
+            resultBox.innerHTML = `
 
-            <div class="grid">
+                <h2>Bill Analysis Completed</h2>
 
-                <div class="card">
-                    <h3>Units Consumed</h3>
-                    <p>${data.units} kWh</p>
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>Units Consumed</h3>
+                        <p>${data.units} kWh</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Total Amount</h3>
+                        <p>₹${data.amount}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Usage Level</h3>
+                        <p>${data.usage_level}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Bill Date</h3>
+                        <p>${data.bill_date}</p>
+                    </div>
+
                 </div>
 
-                <div class="card">
-                    <h3>Total Amount</h3>
-                    <p>₹${data.amount}</p>
-                </div>
+                <br>
 
-                <div class="card">
-                    <h3>Billing Date</h3>
-                    <p>${data.bill_date}</p>
-                </div>
+                <h3>AI Recommendation</h3>
 
-                <div class="card">
-                    <h3>Usage Status</h3>
-                    <p>${data.usage_level}</p>
-                </div>
+                <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
+                    ${data.recommendation}
+                </p>
 
-            </div>
+            `;
 
-            <br>
+            createChart(data.units);
 
-            <h3>AI Recommendation</h3>
+        }
 
-            <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
-                ${data.recommendation}
-            </p>
+        else{
 
-        `;
-
-        createChart(data.units);
+            resultBox.innerHTML =
+                "Error: " + data.error;
+        }
 
     }
 
-    else{
+    catch(error){
 
         resultBox.innerHTML =
-            "Error: " + data.error;
+            "Server Error";
     }
 }
 
@@ -373,19 +306,17 @@ function createChart(units){
 
     chart = new Chart(ctx,{
 
-        type:'bar',
+        type:'doughnut',
 
         data:{
 
             labels:[
                 'Current Usage',
-                'Optimized Usage',
+                'Efficient Usage',
                 'Peak Usage'
             ],
 
             datasets:[{
-
-                label:'Electricity Units',
 
                 data:[
                     units,
@@ -412,42 +343,6 @@ function createChart(units){
 """
 
 # =========================================================
-# LIVE REAL-TIME ENERGY DATA
-# =========================================================
-
-def live_updates():
-
-    while True:
-
-        usage = round(random.uniform(100, 600), 2)
-
-        cost = round(usage * 8, 2)
-
-        voltage = round(random.uniform(210, 250), 2)
-
-        if usage > 450:
-            status = "High Usage"
-        else:
-            status = "Normal"
-
-        socketio.emit("live_update", {
-
-            "usage": usage,
-            "cost": cost,
-            "voltage": voltage,
-            "status": status
-
-        })
-
-        time.sleep(3)
-
-thread = threading.Thread(target=live_updates)
-
-thread.daemon = True
-
-thread.start()
-
-# =========================================================
 # HOME PAGE
 # =========================================================
 
@@ -457,11 +352,11 @@ def home():
     return render_template_string(HTML_PAGE)
 
 # =========================================================
-# ELECTRICITY BILL ANALYSIS
+# ANALYZE ELECTRICITY BILL
 # =========================================================
 
-@app.route("/analyze-bill", methods=["POST"])
-def analyze_bill():
+@app.route("/analyze", methods=["POST"])
+def analyze():
 
     try:
 
@@ -498,7 +393,7 @@ def analyze_bill():
         text = pytesseract.image_to_string(gray)
 
         # =====================================================
-        # EXTRACT UNITS
+        # EXTRACT DETAILS
         # =====================================================
 
         units_match = re.search(
@@ -541,9 +436,9 @@ def analyze_bill():
             usage_level = "High Usage"
 
             recommendation = (
-                "Electricity usage is very high. "
-                "Reduce AC usage and avoid heavy "
-                "appliance usage during peak hours."
+                "Electricity consumption is high. "
+                "Reduce AC usage during peak hours "
+                "and switch to energy-efficient appliances."
             )
 
         elif units > 200:
@@ -552,7 +447,7 @@ def analyze_bill():
 
             recommendation = (
                 "Electricity usage is moderate. "
-                "Using LED appliances can reduce costs."
+                "Using LED lighting can reduce cost."
             )
 
         else:
@@ -560,7 +455,7 @@ def analyze_bill():
             usage_level = "Optimized Usage"
 
             recommendation = (
-                "Electricity usage is balanced and optimized."
+                "Electricity usage is optimized and balanced."
             )
 
         return jsonify({
@@ -575,9 +470,7 @@ def analyze_bill():
 
             "usage_level": usage_level,
 
-            "recommendation": recommendation,
-
-            "ocr_text": text
+            "recommendation": recommendation
 
         })
 
@@ -602,8 +495,8 @@ def health():
 
         "status": "running",
 
-        "application":
-            "AI Electricity Bill Analyzer"
+        "message":
+            "AI Electricity Bill Analyzer Active"
 
     })
 
@@ -613,14 +506,12 @@ def health():
 
 if __name__ == "__main__":
 
-    socketio.run(
+    port = int(os.environ.get("PORT", 5000))
 
-        app,
+    app.run(
 
         host="0.0.0.0",
 
-        port=5000,
-
-        debug=True
+        port=port
 
     )
