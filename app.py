@@ -13,6 +13,12 @@ import os
 app = Flask(__name__)
 
 # =========================================================
+# EASY OCR INITIALIZATION
+# =========================================================
+
+reader = easyocr.Reader(['en', 'te'])
+
+# =========================================================
 # HTML PAGE
 # =========================================================
 
@@ -214,7 +220,7 @@ async function analyzeBill(){
     }
 
     resultBox.innerHTML =
-        "Analyzing electricity bill...";
+        "Analyzing electricity bill using AI OCR...";
 
     const formData = new FormData();
 
@@ -272,6 +278,14 @@ async function analyzeBill(){
 
                 <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
                     ${data.recommendation}
+                </p>
+
+                <br>
+
+                <h3>OCR Extracted Text</h3>
+
+                <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
+                    ${data.ocr_text}
                 </p>
 
             `;
@@ -387,23 +401,21 @@ def analyze():
         )
 
         # =====================================================
-        # OCR TEXT EXTRACTION
+        # EASY OCR EXTRACTION
         # =====================================================
 
-        text = pytesseract.image_to_string(gray)
+        results = reader.readtext(gray)
+
+        text = " ".join([result[1] for result in results])
+
+        print(text)
 
         # =====================================================
-        # EXTRACT DETAILS
+        # EXTRACT BILL DETAILS
         # =====================================================
 
-        units_match = re.search(
-            r'(\\d+\\.?\\d*)\\s*kW',
-            text,
-            re.IGNORECASE
-        )
-
-        amount_match = re.search(
-            r'(\\d+\\.\\d+)',
+        amount_match = re.findall(
+            r'\\d+\\.\\d+',
             text
         )
 
@@ -412,13 +424,19 @@ def analyze():
             text
         )
 
+        kw_match = re.search(
+            r'(\\d+\\.?\\d*)\\s*kW',
+            text,
+            re.IGNORECASE
+        )
+
         units = (
-            float(units_match.group(1))
-            if units_match else 153
+            float(kw_match.group(1))
+            if kw_match else 153
         )
 
         amount = (
-            float(amount_match.group(1))
+            float(amount_match[-1])
             if amount_match else 1509
         )
 
@@ -436,9 +454,8 @@ def analyze():
             usage_level = "High Usage"
 
             recommendation = (
-                "Electricity consumption is high. "
-                "Reduce AC usage during peak hours "
-                "and switch to energy-efficient appliances."
+                "Electricity usage is extremely high. "
+                "Reduce heavy appliance usage during peak hours."
             )
 
         elif units > 200:
@@ -447,7 +464,7 @@ def analyze():
 
             recommendation = (
                 "Electricity usage is moderate. "
-                "Using LED lighting can reduce cost."
+                "Switch to energy-efficient appliances."
             )
 
         else:
@@ -455,7 +472,7 @@ def analyze():
             usage_level = "Optimized Usage"
 
             recommendation = (
-                "Electricity usage is optimized and balanced."
+                "Electricity consumption is balanced and optimized."
             )
 
         return jsonify({
@@ -470,7 +487,9 @@ def analyze():
 
             "usage_level": usage_level,
 
-            "recommendation": recommendation
+            "recommendation": recommendation,
+
+            "ocr_text": text
 
         })
 
