@@ -4,11 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# ================================
-# FRONTEND UI UPGRADE ONLY
-# BACKEND NOT CHANGED
-# REPLACE ONLY HTML_PAGE
-# ================================
 
 HTML_PAGE = """
 
@@ -46,16 +41,16 @@ body{
     min-height:100vh;
 }
 
-/* =======================================
-THUNDER BACKGROUND
-======================================= */
+/* =========================
+BACKGROUND
+========================= */
 
 .background{
     position:fixed;
     width:100%;
     height:100%;
-    overflow:hidden;
     z-index:-3;
+
     background:
     linear-gradient(
         135deg,
@@ -64,7 +59,9 @@ THUNDER BACKGROUND
         #111827,
         #020617
     );
+
     background-size:400% 400%;
+
     animation:bgMove 15s ease infinite;
 }
 
@@ -83,38 +80,40 @@ THUNDER BACKGROUND
     }
 }
 
-/* =======================================
+/* =========================
 THUNDER EFFECT
-======================================= */
+========================= */
 
 .thunder{
-
     position:fixed;
     width:4px;
-    height:200px;
+    height:220px;
     background:white;
-    top:-200px;
+    top:-250px;
     opacity:0;
+
     box-shadow:
-    0 0 25px white,
-    0 0 50px #38bdf8,
+    0 0 20px white,
+    0 0 40px #38bdf8,
     0 0 80px #60a5fa;
+
+    z-index:-2;
 
     animation:lightning 6s linear infinite;
 }
 
-.thunder:nth-child(1){
-    left:15%;
+.thunder:nth-child(2){
+    left:20%;
     animation-delay:1s;
 }
 
-.thunder:nth-child(2){
-    left:45%;
+.thunder:nth-child(3){
+    left:50%;
     animation-delay:3s;
 }
 
-.thunder:nth-child(3){
-    left:75%;
+.thunder:nth-child(4){
+    left:80%;
     animation-delay:5s;
 }
 
@@ -122,7 +121,7 @@ THUNDER EFFECT
 
     0%{
         opacity:0;
-        top:-200px;
+        top:-250px;
     }
 
     5%{
@@ -139,9 +138,9 @@ THUNDER EFFECT
     }
 }
 
-/* =======================================
-MAIN CONTAINER
-======================================= */
+/* =========================
+CONTAINER
+========================= */
 
 .container{
     width:95%;
@@ -150,9 +149,9 @@ MAIN CONTAINER
     padding:40px 20px;
 }
 
-/* =======================================
+/* =========================
 HEADER
-======================================= */
+========================= */
 
 .header{
     text-align:center;
@@ -161,8 +160,7 @@ HEADER
 
 .header h1{
 
-    font-size:62px;
-    font-weight:700;
+    font-size:60px;
 
     background:
     linear-gradient(
@@ -178,24 +176,24 @@ HEADER
 
 .header p{
 
-    margin-top:12px;
+    margin-top:10px;
     color:#94a3b8;
-    font-size:19px;
+    font-size:18px;
 }
 
 .live-box{
-
-    margin-top:25px;
 
     display:inline-flex;
     align-items:center;
     gap:10px;
 
+    margin-top:25px;
+
     padding:12px 24px;
 
     border-radius:50px;
 
-    background:rgba(15,23,42,0.7);
+    background:rgba(15,23,42,0.8);
 
     border:1px solid rgba(255,255,255,0.08);
 
@@ -229,16 +227,16 @@ HEADER
     }
 }
 
-/* =======================================
+/* =========================
 UPLOAD BOX
-======================================= */
+========================= */
 
 .upload-box{
 
     margin-top:45px;
 
     background:
-    rgba(15,23,42,0.85);
+    rgba(15,23,42,0.88);
 
     border-radius:30px;
 
@@ -250,23 +248,20 @@ UPLOAD BOX
 
     backdrop-filter:blur(18px);
 
-    box-shadow:
-    0 10px 40px rgba(0,0,0,0.4);
-
     transition:0.5s;
 }
 
 .upload-box:hover{
 
-    transform:translateY(-8px);
+    transform:translateY(-5px);
 
     box-shadow:
-    0 15px 60px rgba(59,130,246,0.25);
+    0 15px 50px rgba(37,99,235,0.25);
 }
 
 .upload-icon{
 
-    font-size:90px;
+    font-size:85px;
 
     animation:float 3s ease infinite;
 }
@@ -300,24 +295,24 @@ UPLOAD BOX
 
 input[type=file]{
 
-    margin-top:30px;
-
-    background:#1e293b;
+    margin-top:25px;
 
     padding:14px;
 
     border-radius:15px;
+
+    background:#1e293b;
 
     color:white;
 }
 
 input[type=text]{
 
-    width:350px;
+    width:340px;
 
     margin-top:25px;
 
-    padding:16px;
+    padding:15px;
 
     border:none;
 
@@ -328,8 +323,6 @@ input[type=text]{
     color:white;
 
     outline:none;
-
-    font-size:16px;
 }
 
 button{
@@ -370,20 +363,20 @@ button:hover{
     0 10px 35px rgba(37,99,235,0.5);
 }
 
-/* =======================================
+/* =========================
 LOADER
-======================================= */
+========================= */
 
 .loader{
 
-    width:75px;
-    height:75px;
+    width:70px;
+    height:70px;
 
     border-radius:50%;
 
-    border:7px solid rgba(255,255,255,0.08);
+    border:6px solid rgba(255,255,255,0.1);
 
-    border-top:7px solid #38bdf8;
+    border-top:6px solid #38bdf8;
 
     margin:35px auto;
 
@@ -399,9 +392,9 @@ LOADER
     }
 }
 
-/* =======================================
+/* =========================
 DASHBOARD
-======================================= */
+========================= */
 
 .dashboard{
     margin-top:45px;
@@ -419,54 +412,21 @@ DASHBOARD
 
 .card{
 
-    position:relative;
-
-    overflow:hidden;
-
     background:
     rgba(17,24,39,0.9);
 
-    padding:32px;
-
     border-radius:28px;
 
-    border:1px solid rgba(255,255,255,0.06);
+    padding:30px;
 
     transition:0.4s;
+
+    border:1px solid rgba(255,255,255,0.06);
 }
 
 .card:hover{
 
-    transform:translateY(-10px);
-}
-
-.card::before{
-
-    content:"";
-
-    position:absolute;
-
-    width:180%;
-    height:180%;
-
-    background:
-    linear-gradient(
-        45deg,
-        transparent,
-        rgba(255,255,255,0.08),
-        transparent
-    );
-
-    top:-120%;
-    left:-120%;
-
-    transition:1s;
-}
-
-.card:hover::before{
-
-    top:120%;
-    left:120%;
+    transform:translateY(-8px);
 }
 
 .card h3{
@@ -474,20 +434,18 @@ DASHBOARD
     color:#93c5fd;
 
     margin-bottom:15px;
-
-    font-size:17px;
 }
 
 .card p{
 
-    font-size:34px;
+    font-size:32px;
 
     font-weight:700;
 }
 
-/* =======================================
-CHARTS
-======================================= */
+/* =========================
+CHART
+========================= */
 
 .chart-box{
 
@@ -497,38 +455,14 @@ CHARTS
 
     border-radius:28px;
 
-    padding:35px;
+    padding:30px;
 }
 
-/* =======================================
-INSIGHT BOX
-======================================= */
-
-.info-box{
-
-    margin-top:35px;
-
-    background:#111827;
-
-    border-radius:28px;
-
-    padding:35px;
-
-    line-height:1.9;
-}
-
-.info-box h2{
-
-    color:#60a5fa;
-}
-
-/* =======================================
-FEATURE BOXES
-======================================= */
+/* =========================
+FEATURES
+========================= */
 
 .feature-grid{
-
-    margin-top:40px;
 
     display:grid;
 
@@ -536,6 +470,8 @@ FEATURE BOXES
     repeat(auto-fit,minmax(280px,1fr));
 
     gap:25px;
+
+    margin-top:40px;
 }
 
 .feature-card{
@@ -557,8 +493,8 @@ FEATURE BOXES
 .feature-card:hover{
 
     transform:
-    scale(1.03)
-    translateY(-6px);
+    translateY(-8px)
+    scale(1.03);
 }
 
 .feature-card h3{
@@ -568,9 +504,9 @@ FEATURE BOXES
     margin-bottom:15px;
 }
 
-/* =======================================
+/* =========================
 FOOTER
-======================================= */
+========================= */
 
 .footer{
 
@@ -579,13 +515,11 @@ FOOTER
     margin-top:50px;
 
     color:#64748b;
-
-    font-size:14px;
 }
 
-/* =======================================
-ANIMATION
-======================================= */
+/* =========================
+FADE
+========================= */
 
 @keyframes fadeIn{
 
@@ -628,7 +562,7 @@ ANIMATION
 
             <div class="live-dot"></div>
 
-            Live AI Monitoring Active
+            Live Monitoring Active
 
         </div>
 
@@ -645,7 +579,7 @@ ANIMATION
         </h2>
 
         <p>
-            Analyze electricity consumption with AI
+            Upload CSV dataset for smart AI analysis
         </p>
 
         <input
@@ -689,11 +623,11 @@ ANIMATION
         <div class="feature-card">
 
             <h3>
-                Smart AI Detection
+                AI Detection
             </h3>
 
             <p>
-                Automatically detects unusual electricity patterns.
+                Detect abnormal electricity consumption automatically.
             </p>
 
         </div>
@@ -701,11 +635,11 @@ ANIMATION
         <div class="feature-card">
 
             <h3>
-                Carbon Footprint Tracking
+                Carbon Tracking
             </h3>
 
             <p>
-                Calculates environmental impact from electricity usage.
+                Analyze environmental impact using energy usage.
             </p>
 
         </div>
@@ -713,11 +647,11 @@ ANIMATION
         <div class="feature-card">
 
             <h3>
-                Real Time Monitoring
+                Smart Insights
             </h3>
 
             <p>
-                Dynamic dashboard with live analytics visualization.
+                Get intelligent recommendations for saving electricity.
             </p>
 
         </div>
@@ -732,8 +666,238 @@ ANIMATION
 
 </div>
 
-</body>
+<script>
 
+let chart;
+
+async function analyzeDataset(){
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+    const resultBox =
+        document.getElementById("resultBox");
+
+    const loader =
+        document.getElementById("loader");
+
+    const consumerId =
+        document.getElementById("consumerId").value;
+
+    if(fileInput.files.length === 0){
+
+        resultBox.innerHTML =
+            "<h2>Please upload CSV dataset.</h2>";
+
+        return;
+    }
+
+    loader.style.display = "block";
+
+    resultBox.innerHTML =
+        "<h2>Analyzing electricity usage...</h2>";
+
+    const formData = new FormData();
+
+    formData.append(
+        "file",
+        fileInput.files[0]
+    );
+
+    formData.append(
+        "consumer_id",
+        consumerId
+    );
+
+    try{
+
+        const response =
+            await fetch("/analyze",{
+
+            method:"POST",
+
+            body:formData
+
+        });
+
+        const data =
+            await response.json();
+
+        loader.style.display = "none";
+
+        if(data.success){
+
+            resultBox.innerHTML = `
+
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>Consumer ID</h3>
+                        <p>${data.consumer}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Total Units</h3>
+                        <p>${data.total}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Average Usage</h3>
+                        <p>${data.average}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Maximum Usage</h3>
+                        <p>${data.maximum}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Estimated Bill</h3>
+                        <p>₹${data.bill}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Efficiency Score</h3>
+                        <p>${data.score}%</p>
+                    </div>
+
+                </div>
+
+                <div class="feature-grid">
+
+                    <div class="feature-card">
+
+                        <h3>AI Recommendation</h3>
+
+                        <p>${data.recommendation}</p>
+
+                    </div>
+
+                    <div class="feature-card">
+
+                        <h3>Smart Insight</h3>
+
+                        <p>${data.insight}</p>
+
+                    </div>
+
+                    <div class="feature-card">
+
+                        <h3>Usage Status</h3>
+
+                        <p>
+                            ${
+                                data.score > 80
+                                ? "Efficient Usage"
+                                : "Needs Optimization"
+                            }
+                        </p>
+
+                    </div>
+
+                </div>
+
+            `;
+
+            createChart(
+                data.average,
+                data.maximum,
+                data.minimum
+            );
+        }
+
+        else{
+
+            resultBox.innerHTML =
+                "<h2>" + data.error + "</h2>";
+        }
+
+    }
+
+    catch(error){
+
+        loader.style.display = "none";
+
+        resultBox.innerHTML =
+            "<h2>Server Error</h2>";
+    }
+}
+
+function createChart(avg,max,min){
+
+    const ctx =
+        document.getElementById("usageChart");
+
+    if(chart){
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx,{
+
+        type:'bar',
+
+        data:{
+
+            labels:[
+                'Average',
+                'Maximum',
+                'Minimum'
+            ],
+
+            datasets:[{
+
+                label:'Electricity Usage',
+
+                data:[
+                    avg,
+                    max,
+                    min
+                ],
+
+                backgroundColor:[
+                    '#2563eb',
+                    '#06b6d4',
+                    '#10b981'
+                ],
+
+                borderRadius:12
+            }]
+        },
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+
+                legend:{
+                    labels:{
+                        color:'white'
+                    }
+                }
+            },
+
+            scales:{
+
+                y:{
+                    ticks:{
+                        color:'white'
+                    }
+                },
+
+                x:{
+                    ticks:{
+                        color:'white'
+                    }
+                }
+            }
+        }
+    });
+}
+
+</script>
+
+</body>
 </html>
 
 """
