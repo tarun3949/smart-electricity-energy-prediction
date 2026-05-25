@@ -16,7 +16,7 @@ app = Flask(__name__)
 # EASY OCR INITIALIZATION
 # =========================================================
 
-reader = easyocr.Reader(['en', 'te'])
+reader = easyocr.Reader(['en'], gpu=False)
 
 # =========================================================
 # HTML PAGE
@@ -149,6 +149,11 @@ canvas{
     color:#64748b;
 }
 
+.loader{
+    margin-top:20px;
+    color:#38bdf8;
+}
+
 </style>
 
 </head>
@@ -176,6 +181,8 @@ canvas{
         <button onclick="analyzeBill()">
             Analyze Bill
         </button>
+
+        <div class="loader" id="loader"></div>
 
     </div>
 
@@ -211,6 +218,9 @@ async function analyzeBill(){
     const resultBox =
         document.getElementById("resultBox");
 
+    const loader =
+        document.getElementById("loader");
+
     if(fileInput.files.length === 0){
 
         resultBox.innerHTML =
@@ -219,8 +229,8 @@ async function analyzeBill(){
         return;
     }
 
-    resultBox.innerHTML =
-        "Analyzing electricity bill using AI OCR...";
+    loader.innerHTML =
+        "Analyzing bill using AI OCR...";
 
     const formData = new FormData();
 
@@ -241,6 +251,8 @@ async function analyzeBill(){
         });
 
         const data = await response.json();
+
+        loader.innerHTML = "";
 
         if(data.success){
 
@@ -304,6 +316,8 @@ async function analyzeBill(){
 
     catch(error){
 
+        loader.innerHTML = "";
+
         resultBox.innerHTML =
             "Server Error";
     }
@@ -345,13 +359,19 @@ function createChart(units){
                 ]
 
             }]
+        },
+
+        options:{
+            responsive:true
         }
+
     });
 }
 
 </script>
 
 </body>
+
 </html>
 
 """
@@ -395,58 +415,58 @@ def analyze():
             cv2.IMREAD_COLOR
         )
 
+        if image is None:
+
+            return jsonify({
+
+                "success": False,
+                "error": "Invalid image"
+
+            })
+
         gray = cv2.cvtColor(
             image,
             cv2.COLOR_BGR2GRAY
         )
 
         # =====================================================
-        # EASY OCR EXTRACTION
+        # OCR EXTRACTION
         # =====================================================
 
         results = reader.readtext(gray)
 
-        text = " ".join([result[1] for result in results])
-
-        print(text)
-
-        # =====================================================
-        # EXTRACT BILL DETAILS
-        # =====================================================
-
-        amount_match = re.findall(
-            r'\\d+\\.\\d+',
-            text
+        text = " ".join(
+            [result[1] for result in results]
         )
+
+        # =====================================================
+        # DATA EXTRACTION
+        # =====================================================
+
+        numbers = re.findall(r'\\d+\\.\\d+|\\d+', text)
+
+        amount = 0
+        units = 0
+
+        if len(numbers) > 0:
+            amount = float(numbers[-1])
+
+        if len(numbers) > 1:
+            units = float(numbers[1])
 
         date_match = re.search(
             r'\\d{2}/\\d{2}/\\d{4}',
             text
         )
 
-        kw_match = re.search(
-            r'(\\d+\\.?\\d*)\\s*kW',
-            text,
-            re.IGNORECASE
-        )
-
-        units = (
-            float(kw_match.group(1))
-            if kw_match else 153
-        )
-
-        amount = (
-            float(amount_match[-1])
-            if amount_match else 1509
-        )
-
         bill_date = (
             date_match.group(0)
-            if date_match else str(datetime.now().date())
+            if date_match
+            else str(datetime.now().date())
         )
 
         # =====================================================
-        # AI ANALYSIS
+        # USAGE ANALYSIS
         # =====================================================
 
         if units > 400:
@@ -454,8 +474,8 @@ def analyze():
             usage_level = "High Usage"
 
             recommendation = (
-                "Electricity usage is extremely high. "
-                "Reduce heavy appliance usage during peak hours."
+                "Electricity usage is high. "
+                "Reduce AC and heavy appliance usage."
             )
 
         elif units > 200:
@@ -464,7 +484,7 @@ def analyze():
 
             recommendation = (
                 "Electricity usage is moderate. "
-                "Switch to energy-efficient appliances."
+                "Switch to LED lighting and smart appliances."
             )
 
         else:
@@ -512,10 +532,7 @@ def health():
 
     return jsonify({
 
-        "status": "running",
-
-        "message":
-            "AI Electricity Bill Analyzer Active"
+        "status": "running"
 
     })
 
@@ -528,9 +545,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
 
     app.run(
-
         host="0.0.0.0",
-
         port=port
-
     )
