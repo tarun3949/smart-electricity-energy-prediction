@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template_string
 import numpy as np
 import cv2
-import pytesseract
+import easyocr
 import re
 from datetime import datetime
 import os
