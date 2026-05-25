@@ -54,7 +54,7 @@ body{
 
 .container{
     width:95%;
-    max-width:1200px;
+    max-width:1400px;
     margin:auto;
     padding:40px 20px;
 }
@@ -66,8 +66,11 @@ body{
 }
 
 .title h1{
-    font-size:48px;
+    font-size:52px;
     font-weight:700;
+    background:linear-gradient(90deg,#3b82f6,#06b6d4,#10b981);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
 }
 
 .title p{
@@ -88,28 +91,42 @@ body{
 }
 
 .upload-box{
-    background:rgba(15,23,42,0.9);
+    background:rgba(15,23,42,0.85);
     border:2px dashed #334155;
-    border-radius:25px;
+    border-radius:30px;
     padding:50px;
     text-align:center;
     transition:0.4s;
-    backdrop-filter:blur(10px);
+    backdrop-filter:blur(12px);
+    box-shadow:0 10px 40px rgba(0,0,0,0.4);
 }
 
 .upload-box:hover{
-    transform:scale(1.01);
-    border-color:#3b82f6;
+    transform:translateY(-5px);
+    border-color:#38bdf8;
+}
+
+.upload-icon{
+    font-size:60px;
+    margin-bottom:20px;
+    animation:float 3s ease-in-out infinite;
+}
+
+@keyframes float{
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-10px);}
+    100%{transform:translateY(0px);}
 }
 
 .file-input{
     margin-top:20px;
     color:white;
+    font-size:16px;
 }
 
 button{
     margin-top:25px;
-    padding:15px 45px;
+    padding:16px 50px;
     border:none;
     border-radius:50px;
     background:linear-gradient(135deg,#2563eb,#06b6d4);
@@ -121,15 +138,15 @@ button{
 }
 
 button:hover{
-    transform:translateY(-5px);
-    box-shadow:0 10px 25px rgba(37,99,235,0.4);
+    transform:translateY(-5px) scale(1.03);
+    box-shadow:0 10px 30px rgba(37,99,235,0.5);
 }
 
 .loader{
-    width:60px;
-    height:60px;
-    border:5px solid rgba(255,255,255,0.1);
-    border-top:5px solid #38bdf8;
+    width:70px;
+    height:70px;
+    border:6px solid rgba(255,255,255,0.1);
+    border-top:6px solid #38bdf8;
     border-radius:50%;
     animation:spin 1s linear infinite;
     margin:30px auto;
@@ -144,68 +161,91 @@ button:hover{
 
 .result-box{
     margin-top:40px;
-    background:rgba(15,23,42,0.95);
-    border-radius:25px;
-    padding:35px;
+    background:rgba(15,23,42,0.92);
+    border-radius:30px;
+    padding:40px;
     animation:fadeIn 1s ease;
+    box-shadow:0 10px 50px rgba(0,0,0,0.4);
 }
 
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:25px;
     margin-top:30px;
 }
 
 .card{
     background:#1e293b;
-    padding:25px;
-    border-radius:20px;
+    padding:30px;
+    border-radius:25px;
     transition:0.4s;
+    position:relative;
+    overflow:hidden;
+}
+
+.card::before{
+    content:"";
+    position:absolute;
+    width:120%;
+    height:120%;
+    background:linear-gradient(45deg,transparent,#38bdf8,transparent);
+    top:-100%;
+    left:-100%;
+    transition:0.8s;
+}
+
+.card:hover::before{
+    top:100%;
+    left:100%;
 }
 
 .card:hover{
-    transform:translateY(-6px);
+    transform:translateY(-8px);
     background:#243041;
 }
 
 .card h3{
     color:#93c5fd;
-    margin-bottom:12px;
+    margin-bottom:15px;
     font-size:17px;
 }
 
 .card p{
-    font-size:30px;
+    font-size:32px;
     font-weight:700;
 }
 
-.chart-container{
+.chart-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
+    gap:30px;
     margin-top:40px;
+}
+
+.chart-container{
     background:#111827;
     border-radius:25px;
     padding:25px;
 }
 
-.footer{
-    text-align:center;
-    margin-top:40px;
-    color:#64748b;
-    font-size:14px;
+.progress-section{
+    margin-top:30px;
 }
 
 .progress-bar{
     width:100%;
+    height:20px;
     background:#1e293b;
     border-radius:20px;
     overflow:hidden;
-    margin-top:20px;
+    margin-top:10px;
 }
 
 .progress{
+    height:100%;
     width:0%;
-    height:18px;
-    background:linear-gradient(90deg,#2563eb,#06b6d4);
+    background:linear-gradient(90deg,#2563eb,#06b6d4,#10b981);
     animation:load 2s forwards;
 }
 
@@ -216,6 +256,46 @@ button:hover{
     to{
         width:100%;
     }
+}
+
+.info-box{
+    margin-top:30px;
+    background:#1e293b;
+    padding:25px;
+    border-radius:20px;
+    line-height:1.8;
+}
+
+.footer{
+    text-align:center;
+    margin-top:50px;
+    color:#64748b;
+    font-size:14px;
+}
+
+.badge{
+    display:inline-block;
+    padding:8px 18px;
+    background:#0f766e;
+    border-radius:30px;
+    margin-top:15px;
+    font-size:14px;
+}
+
+.live-dot{
+    width:12px;
+    height:12px;
+    background:#22c55e;
+    border-radius:50%;
+    display:inline-block;
+    margin-right:8px;
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+    0%{opacity:1;}
+    50%{opacity:0.3;}
+    100%{opacity:1;}
 }
 
 </style>
@@ -232,13 +312,28 @@ button:hover{
 
         <h1>⚡ Smart Electricity Analytics</h1>
 
-        <p>Upload Electricity Dataset and Analyze Energy Usage with AI</p>
+        <p>
+            AI Powered Electricity Monitoring & Consumption Intelligence
+        </p>
+
+        <div class="badge">
+            <span class="live-dot"></span>
+            Live AI Analytics Active
+        </div>
 
     </div>
 
     <div class="upload-box">
 
-        <h2>Upload CSV Dataset</h2>
+        <div class="upload-icon">
+            ⚡
+        </div>
+
+        <h2>Upload Electricity Dataset</h2>
+
+        <p style="margin-top:10px;color:#94a3b8;">
+            Upload CSV Dataset for Advanced AI Analysis
+        </p>
 
         <input
             type="file"
@@ -263,15 +358,25 @@ button:hover{
 
     </div>
 
-    <div class="chart-container">
+    <div class="chart-grid">
 
-        <canvas id="usageChart"></canvas>
+        <div class="chart-container">
+
+            <canvas id="usageChart"></canvas>
+
+        </div>
+
+        <div class="chart-container">
+
+            <canvas id="donutChart"></canvas>
+
+        </div>
 
     </div>
 
     <div class="footer">
 
-        AI Powered Electricity Monitoring Dashboard
+        Smart Electricity Intelligence Platform • AI Analytics Dashboard
 
     </div>
 
@@ -279,7 +384,8 @@ button:hover{
 
 <script>
 
-let chart;
+let usageChart;
+let donutChart;
 
 async function analyzeDataset(){
 
@@ -303,7 +409,7 @@ async function analyzeDataset(){
     loader.style.display = "block";
 
     resultBox.innerHTML =
-        "Analyzing dataset using AI...";
+        "AI analyzing electricity dataset...";
 
     const formData = new FormData();
 
@@ -332,10 +438,22 @@ async function analyzeDataset(){
 
             resultBox.innerHTML = `
 
-                <h2>Dataset Analysis Completed</h2>
+                <h2>
+                    Dataset Analysis Completed
+                </h2>
 
-                <div class="progress-bar">
-                    <div class="progress"></div>
+                <div class="progress-section">
+
+                    <h3>
+                        AI Processing Completion
+                    </h3>
+
+                    <div class="progress-bar">
+
+                        <div class="progress"></div>
+
+                    </div>
+
                 </div>
 
                 <div class="grid">
@@ -351,7 +469,7 @@ async function analyzeDataset(){
                     </div>
 
                     <div class="card">
-                        <h3>Average Units</h3>
+                        <h3>Average Usage</h3>
                         <p>${data.average}</p>
                     </div>
 
@@ -366,39 +484,68 @@ async function analyzeDataset(){
                     </div>
 
                     <div class="card">
-                        <h3>Total Usage</h3>
+                        <h3>Total Consumption</h3>
                         <p>${data.total}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Efficiency Score</h3>
+                        <p>${data.score}%</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Usage Status</h3>
+                        <p>${data.efficiency}</p>
                     </div>
 
                 </div>
 
-                <br>
+                <div class="info-box">
 
-                <h3>AI Recommendation</h3>
+                    <h3>
+                        AI Recommendation
+                    </h3>
 
-                <p style="margin-top:15px;color:#cbd5e1;line-height:1.8;">
-                    ${data.recommendation}
-                </p>
+                    <p style="margin-top:15px;color:#cbd5e1;">
+                        ${data.recommendation}
+                    </p>
 
-                <br>
+                </div>
 
-                <h3>Usage Efficiency</h3>
+                <div class="info-box">
 
-                <p style="margin-top:15px;color:#cbd5e1;">
-                    ${data.efficiency}
-                </p>
+                    <h3>
+                        Peak Consumption Alert
+                    </h3>
 
-                <br>
+                    <p style="margin-top:15px;color:#fca5a5;">
+                        ${data.alert}
+                    </p>
 
-                <h3>Peak Consumption Alert</h3>
+                </div>
 
-                <p style="margin-top:15px;color:#fca5a5;">
-                    ${data.alert}
-                </p>
+                <div class="info-box">
+
+                    <h3>
+                        Carbon Footprint Analysis
+                    </h3>
+
+                    <p style="margin-top:15px;color:#cbd5e1;">
+                        Estimated CO₂ Emission:
+                        ${data.carbon} kg
+                    </p>
+
+                </div>
 
             `;
 
-            createChart(
+            createUsageChart(
+                data.average,
+                data.maximum,
+                data.minimum
+            );
+
+            createDonutChart(
                 data.average,
                 data.maximum,
                 data.minimum
@@ -423,16 +570,16 @@ async function analyzeDataset(){
     }
 }
 
-function createChart(avg,max,min){
+function createUsageChart(avg,max,min){
 
     const ctx =
         document.getElementById("usageChart");
 
-    if(chart){
-        chart.destroy();
+    if(usageChart){
+        usageChart.destroy();
     }
 
-    chart = new Chart(ctx,{
+    usageChart = new Chart(ctx,{
 
         type:'bar',
 
@@ -460,7 +607,7 @@ function createChart(avg,max,min){
                     '#10b981'
                 ],
 
-                borderRadius:10
+                borderRadius:12
 
             }]
         },
@@ -468,6 +615,10 @@ function createChart(avg,max,min){
         options:{
 
             responsive:true,
+
+            animation:{
+                duration:2000
+            },
 
             plugins:{
 
@@ -488,6 +639,65 @@ function createChart(avg,max,min){
 
                 x:{
                     ticks:{
+                        color:'white'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createDonutChart(avg,max,min){
+
+    const ctx =
+        document.getElementById("donutChart");
+
+    if(donutChart){
+        donutChart.destroy();
+    }
+
+    donutChart = new Chart(ctx,{
+
+        type:'doughnut',
+
+        data:{
+
+            labels:[
+                'Average',
+                'Maximum',
+                'Minimum'
+            ],
+
+            datasets:[{
+
+                data:[
+                    avg,
+                    max,
+                    min
+                ],
+
+                backgroundColor:[
+                    '#2563eb',
+                    '#06b6d4',
+                    '#10b981'
+                ]
+
+            }]
+        },
+
+        options:{
+
+            responsive:true,
+
+            animation:{
+                animateRotate:true,
+                duration:2000
+            },
+
+            plugins:{
+
+                legend:{
+                    labels:{
                         color:'white'
                     }
                 }
@@ -550,37 +760,51 @@ def analyze():
 
         total = round(float(usage_data.sum()), 2)
 
+        carbon = round(total * 0.45, 2)
+
         if average > 500:
 
             recommendation = (
                 "High electricity usage detected. "
-                "Reduce heavy appliance usage during peak hours."
+                "Reduce appliance usage during peak hours."
             )
 
             efficiency = "Low Efficiency"
 
-            alert = "Peak energy consumption is very high."
+            alert = (
+                "Critical peak consumption detected."
+            )
+
+            score = 45
 
         elif average > 250:
 
             recommendation = (
                 "Moderate electricity usage detected. "
-                "Using LED appliances can improve efficiency."
+                "Switch to efficient appliances."
             )
 
             efficiency = "Moderate Efficiency"
 
-            alert = "Energy consumption is moderately high."
+            alert = (
+                "Energy usage moderately high."
+            )
+
+            score = 72
 
         else:
 
             recommendation = (
-                "Electricity usage is optimized and balanced."
+                "Electricity usage is optimized."
             )
 
             efficiency = "High Efficiency"
 
-            alert = "No abnormal electricity spike detected."
+            alert = (
+                "No abnormal consumption detected."
+            )
+
+            score = 92
 
         return jsonify({
 
@@ -597,6 +821,10 @@ def analyze():
             "minimum": minimum,
 
             "total": total,
+
+            "carbon": carbon,
+
+            "score": score,
 
             "recommendation": recommendation,
 
