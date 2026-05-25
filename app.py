@@ -5,6 +5,11 @@ import os
 app = Flask(__name__)
 
 
+# =========================================================
+# REPLACE ONLY HTML_PAGE
+# ADVANCED UI FOR YOUR 600 ROW DATASET
+# =========================================================
+
 HTML_PAGE = """
 
 <!DOCTYPE html>
@@ -18,7 +23,7 @@ HTML_PAGE = """
 content="width=device-width, initial-scale=1.0">
 
 <title>
-Smart Electricity Intelligence
+AI Smart Electricity Dashboard
 </title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -38,17 +43,19 @@ body{
     background:#020617;
     overflow-x:hidden;
     color:white;
-    min-height:100vh;
 }
 
-/* =========================
-BACKGROUND
-========================= */
+/* =========================================
+ANIMATED BACKGROUND
+========================================= */
 
 .background{
+
     position:fixed;
+
     width:100%;
     height:100%;
+
     z-index:-3;
 
     background:
@@ -80,24 +87,27 @@ BACKGROUND
     }
 }
 
-/* =========================
-THUNDER EFFECT
-========================= */
+/* =========================================
+THUNDER ANIMATION
+========================================= */
 
 .thunder{
+
     position:fixed;
+
     width:4px;
     height:220px;
+
     background:white;
+
     top:-250px;
+
     opacity:0;
 
     box-shadow:
     0 0 20px white,
-    0 0 40px #38bdf8,
-    0 0 80px #60a5fa;
-
-    z-index:-2;
+    0 0 50px #38bdf8,
+    0 0 90px #60a5fa;
 
     animation:lightning 6s linear infinite;
 }
@@ -138,29 +148,28 @@ THUNDER EFFECT
     }
 }
 
-/* =========================
+/* =========================================
 CONTAINER
-========================= */
+========================================= */
 
 .container{
     width:95%;
-    max-width:1450px;
+    max-width:1500px;
     margin:auto;
     padding:40px 20px;
 }
 
-/* =========================
+/* =========================================
 HEADER
-========================= */
+========================================= */
 
 .header{
     text-align:center;
-    animation:fadeIn 1s ease;
 }
 
 .header h1{
 
-    font-size:60px;
+    font-size:62px;
 
     background:
     linear-gradient(
@@ -176,28 +185,31 @@ HEADER
 
 .header p{
 
-    margin-top:10px;
     color:#94a3b8;
+
+    margin-top:12px;
+
     font-size:18px;
 }
 
 .live-box{
 
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-
     margin-top:25px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
 
     padding:12px 24px;
 
     border-radius:50px;
 
-    background:rgba(15,23,42,0.8);
+    background:
+    rgba(15,23,42,0.7);
 
     border:1px solid rgba(255,255,255,0.08);
-
-    backdrop-filter:blur(10px);
 }
 
 .live-dot{
@@ -227,9 +239,9 @@ HEADER
     }
 }
 
-/* =========================
-UPLOAD BOX
-========================= */
+/* =========================================
+UPLOAD SECTION
+========================================= */
 
 .upload-box{
 
@@ -261,7 +273,7 @@ UPLOAD BOX
 
 .upload-icon{
 
-    font-size:85px;
+    font-size:90px;
 
     animation:float 3s ease infinite;
 }
@@ -283,13 +295,15 @@ UPLOAD BOX
 
 .upload-box h2{
 
-    margin-top:10px;
+    margin-top:15px;
+
     font-size:34px;
 }
 
 .upload-box p{
 
-    margin-top:12px;
+    margin-top:10px;
+
     color:#94a3b8;
 }
 
@@ -297,22 +311,22 @@ input[type=file]{
 
     margin-top:25px;
 
+    background:#1e293b;
+
     padding:14px;
 
     border-radius:15px;
-
-    background:#1e293b;
 
     color:white;
 }
 
 input[type=text]{
 
-    width:340px;
+    width:350px;
 
     margin-top:25px;
 
-    padding:15px;
+    padding:16px;
 
     border:none;
 
@@ -363,9 +377,9 @@ button:hover{
     0 10px 35px rgba(37,99,235,0.5);
 }
 
-/* =========================
+/* =========================================
 LOADER
-========================= */
+========================================= */
 
 .loader{
 
@@ -392,9 +406,9 @@ LOADER
     }
 }
 
-/* =========================
-DASHBOARD
-========================= */
+/* =========================================
+RESULTS
+========================================= */
 
 .dashboard{
     margin-top:45px;
@@ -413,7 +427,7 @@ DASHBOARD
 .card{
 
     background:
-    rgba(17,24,39,0.9);
+    rgba(17,24,39,0.92);
 
     border-radius:28px;
 
@@ -426,7 +440,9 @@ DASHBOARD
 
 .card:hover{
 
-    transform:translateY(-8px);
+    transform:
+    translateY(-8px)
+    scale(1.02);
 }
 
 .card h3{
@@ -438,18 +454,28 @@ DASHBOARD
 
 .card p{
 
-    font-size:32px;
+    font-size:34px;
 
     font-weight:700;
 }
 
-/* =========================
-CHART
-========================= */
+/* =========================================
+CHARTS
+========================================= */
 
-.chart-box{
+.chart-grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(400px,1fr));
+
+    gap:25px;
 
     margin-top:40px;
+}
+
+.chart-box{
 
     background:#111827;
 
@@ -458,11 +484,13 @@ CHART
     padding:30px;
 }
 
-/* =========================
+/* =========================================
 FEATURES
-========================= */
+========================================= */
 
 .feature-grid{
+
+    margin-top:40px;
 
     display:grid;
 
@@ -470,8 +498,6 @@ FEATURES
     repeat(auto-fit,minmax(280px,1fr));
 
     gap:25px;
-
-    margin-top:40px;
 }
 
 .feature-card{
@@ -504,34 +530,17 @@ FEATURES
     margin-bottom:15px;
 }
 
-/* =========================
+/* =========================================
 FOOTER
-========================= */
+========================================= */
 
 .footer{
 
     text-align:center;
 
-    margin-top:50px;
+    margin-top:60px;
 
     color:#64748b;
-}
-
-/* =========================
-FADE
-========================= */
-
-@keyframes fadeIn{
-
-    from{
-        opacity:0;
-        transform:translateY(30px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
 }
 
 </style>
@@ -551,18 +560,18 @@ FADE
     <div class="header">
 
         <h1>
-            ⚡ Smart Electricity Intelligence
+            ⚡ AI Smart Electricity Dashboard
         </h1>
 
         <p>
-            AI Powered Electricity Analytics Dashboard
+            Advanced Electricity Consumption Intelligence Platform
         </p>
 
         <div class="live-box">
 
             <div class="live-dot"></div>
 
-            Live Monitoring Active
+            AI Monitoring Active
 
         </div>
 
@@ -579,7 +588,7 @@ FADE
         </h2>
 
         <p>
-            Upload CSV dataset for smart AI analysis
+            Analyze 600+ electricity records dynamically
         </p>
 
         <input
@@ -593,7 +602,7 @@ FADE
         <input
             type="text"
             id="consumerId"
-            placeholder="Enter Bill Number / Consumer ID"
+            placeholder="Enter Customer ID / Bill Number"
         >
 
         <br>
@@ -612,9 +621,19 @@ FADE
 
     </div>
 
-    <div class="chart-box">
+    <div class="chart-grid">
 
-        <canvas id="usageChart"></canvas>
+        <div class="chart-box">
+
+            <canvas id="usageChart"></canvas>
+
+        </div>
+
+        <div class="chart-box">
+
+            <canvas id="billChart"></canvas>
+
+        </div>
 
     </div>
 
@@ -623,11 +642,11 @@ FADE
         <div class="feature-card">
 
             <h3>
-                AI Detection
+                Smart Bill Tracking
             </h3>
 
             <p>
-                Detect abnormal electricity consumption automatically.
+                Search using Customer ID or Bill Number.
             </p>
 
         </div>
@@ -635,11 +654,11 @@ FADE
         <div class="feature-card">
 
             <h3>
-                Carbon Tracking
+                AI Energy Insights
             </h3>
 
             <p>
-                Analyze environmental impact using energy usage.
+                Get smart electricity optimization suggestions.
             </p>
 
         </div>
@@ -647,11 +666,23 @@ FADE
         <div class="feature-card">
 
             <h3>
-                Smart Insights
+                Carbon Monitoring
             </h3>
 
             <p>
-                Get intelligent recommendations for saving electricity.
+                Analyze environmental impact of energy usage.
+            </p>
+
+        </div>
+
+        <div class="feature-card">
+
+            <h3>
+                Payment Analytics
+            </h3>
+
+            <p>
+                Track paid, pending and overdue bills dynamically.
             </p>
 
         </div>
@@ -660,7 +691,7 @@ FADE
 
     <div class="footer">
 
-        Smart Electricity Intelligence Platform © 2026
+        AI Smart Electricity Dashboard © 2026
 
     </div>
 
@@ -668,7 +699,8 @@ FADE
 
 <script>
 
-let chart;
+let usageChart;
+let billChart;
 
 async function analyzeDataset(){
 
@@ -695,7 +727,7 @@ async function analyzeDataset(){
     loader.style.display = "block";
 
     resultBox.innerHTML =
-        "<h2>Analyzing electricity usage...</h2>";
+        "<h2>Analyzing electricity dataset...</h2>";
 
     const formData = new FormData();
 
@@ -763,46 +795,13 @@ async function analyzeDataset(){
 
                 </div>
 
-                <div class="feature-grid">
-
-                    <div class="feature-card">
-
-                        <h3>AI Recommendation</h3>
-
-                        <p>${data.recommendation}</p>
-
-                    </div>
-
-                    <div class="feature-card">
-
-                        <h3>Smart Insight</h3>
-
-                        <p>${data.insight}</p>
-
-                    </div>
-
-                    <div class="feature-card">
-
-                        <h3>Usage Status</h3>
-
-                        <p>
-                            ${
-                                data.score > 80
-                                ? "Efficient Usage"
-                                : "Needs Optimization"
-                            }
-                        </p>
-
-                    </div>
-
-                </div>
-
             `;
 
-            createChart(
+            createCharts(
                 data.average,
                 data.maximum,
-                data.minimum
+                data.minimum,
+                data.bill
             );
         }
 
@@ -823,16 +822,23 @@ async function analyzeDataset(){
     }
 }
 
-function createChart(avg,max,min){
+function createCharts(avg,max,min,bill){
 
-    const ctx =
+    const usageCtx =
         document.getElementById("usageChart");
 
-    if(chart){
-        chart.destroy();
+    const billCtx =
+        document.getElementById("billChart");
+
+    if(usageChart){
+        usageChart.destroy();
     }
 
-    chart = new Chart(ctx,{
+    if(billChart){
+        billChart.destroy();
+    }
+
+    usageChart = new Chart(usageCtx,{
 
         type:'bar',
 
@@ -865,32 +871,40 @@ function createChart(avg,max,min){
         },
 
         options:{
+            responsive:true
+        }
+    });
 
-            responsive:true,
+    billChart = new Chart(billCtx,{
 
-            plugins:{
+        type:'doughnut',
 
-                legend:{
-                    labels:{
-                        color:'white'
-                    }
-                }
-            },
+        data:{
 
-            scales:{
+            labels:[
+                'Electricity Bill',
+                'Tax',
+                'Savings'
+            ],
 
-                y:{
-                    ticks:{
-                        color:'white'
-                    }
-                },
+            datasets:[{
 
-                x:{
-                    ticks:{
-                        color:'white'
-                    }
-                }
-            }
+                data:[
+                    bill,
+                    bill * 0.18,
+                    bill * 0.10
+                ],
+
+                backgroundColor:[
+                    '#3b82f6',
+                    '#ef4444',
+                    '#22c55e'
+                ]
+            }]
+        },
+
+        options:{
+            responsive:true
         }
     });
 }
